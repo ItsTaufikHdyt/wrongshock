@@ -20,6 +20,8 @@ class WasteDepositResource extends Resource
 {
     protected static ?string $model = WasteDeposit::class;
     protected static ?string $pluralLabel = 'Setor Limbah';
+    protected static ?int $navigationSort = 1;
+
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
     protected static ?string $navigationGroup = 'Bank Sampah';

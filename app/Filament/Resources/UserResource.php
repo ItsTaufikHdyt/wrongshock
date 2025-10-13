@@ -13,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Spatie\Permission\Models\Role;
@@ -40,9 +41,19 @@ class UserResource extends Resource
                                 ->required()
                                 ->disabled(true)
                                 ->default(function () {
-                                    $lastNumber = \App\Models\User::max('id') ?? 0;
-                                    $nextNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-                                    return 'BSK-2025-' . $nextNumber;
+
+                                    $user = Auth::user();
+                                    $kodeKota = '001'; // Bontang
+                                    $kodeDistrict = str_pad($user->district_id, 2, '0', STR_PAD_LEFT);
+                                    $kodeSubDistrict = str_pad($user->sub_district_id, 2, '0', STR_PAD_LEFT);
+                                    // ambil tahun berjalan
+                                    $tahun = date('Y');
+
+                                    // generate angka random 4 digit
+                                    $randomNumber = str_pad(rand(0, 9999), 4, '0', STR_PAD_LEFT);
+
+                                    // gabungkan jadi format ID
+                                    return $kodeKota . $kodeDistrict . $kodeSubDistrict . $tahun . $randomNumber;
                                 })
                                 ->dehydrated(), // pastikan tetap dikirim ke database
                         ]),
@@ -84,6 +95,14 @@ class UserResource extends Resource
                     Forms\Components\FileUpload::make('image')
                         ->required()
                         ->image(),
+                    Forms\Components\Select::make('status')
+                        ->label('Status')
+                        ->options([
+                            1 => 'Aktif',
+                            0 => 'Nonaktif',
+                        ])
+                        ->required()
+                        ->native(false),
                     Forms\Components\Select::make('roles')
                         ->required()
                         ->label('Role')
@@ -112,6 +131,16 @@ class UserResource extends Resource
                     ->label('ID Pengguna')
                     ->sortable()
                     ->searchable(),
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Status')
+                    ->sortable()
+                    ->searchable()
+                    ->badge()
+                    ->formatStateUsing(fn($state) => $state == 1 ? 'Aktif' : 'Nonaktif')
+                    ->colors([
+                        'success' => 1,   // hijau untuk status = 1
+                        'danger'  => 0,   // merah untuk status = 0
+                    ]),
                 Tables\Columns\TextColumn::make('email')
                     ->label('Email')
                     ->sortable()

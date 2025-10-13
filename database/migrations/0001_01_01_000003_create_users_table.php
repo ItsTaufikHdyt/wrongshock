@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('address')->nullable();
             $table->bigInteger('balance')->default(0);
             $table->string('image')->nullable();
+            $table->tinyInteger('status')->default(1)->comment('1=active, 0=inactive');
             $table->timestamps();
 
             $table->foreign('district_id')->references('id')->on('districts')->onDelete('cascade');

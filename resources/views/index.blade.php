@@ -62,7 +62,7 @@
             <br>
             sistem dan kesadaran pengelolaan limbah di masyarakat Kota Bontang
           </p>
-          <button class="btn btn-register">Daftar</button>
+          <a class="btn btn-register" href="{{ url('register') }}">Daftar</a>
         </div>
         <div class="col-lg-12">
           <div class="banner-image"

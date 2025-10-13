@@ -22,12 +22,13 @@ class UserSeeder extends Seeder
         $admin = User::create([
             'name' => 'Admin',
             'email' => 'admin@gmail.com',
-            'number' => 'ADM-BSK-2025-0001', 
+            'number' => '001010120251234', 
             'password' => bcrypt('admin123'),
             'address' => 'Jl. Admin No. 1',
             'balance' => 1000000, // contoh saldo awal
             'district_id' => 1, 
-            'sub_district_id' => 1, 
+            'sub_district_id' => 1,
+            'status' => '1',
 
         ]);
         $admin->assignRole($adminRole);
@@ -36,12 +37,13 @@ class UserSeeder extends Seeder
         $user = User::create([
             'name' => 'taufikhdyt',
             'email' => 'user@gmail.com',
-            'number' => 'BSK-2025-0001', 
+            'number' => '001010220254321', 
             'password' => bcrypt('user123'),
             'address' => 'Jl. Admin No. 2',
             'balance' => 1000000,
             'district_id' => 1, 
             'sub_district_id' => 2, 
+            'status' => '1',
         ]);
         $user->assignRole($userRole);
     }

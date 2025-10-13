@@ -20,11 +20,11 @@ class DistrictSeeder extends Seeder
             ],
             [
                 'id' => '2',
-                'name' => 'Bontang Utara',
+                'name' => 'Bontang Selatan',
             ],
             [
                 'id' => '3',
-                'name' => 'Bontang Selatan',
+                'name' => 'Bontang Utara',
             ],
         ];
 

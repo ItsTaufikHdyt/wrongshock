@@ -18,6 +18,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Spatie\Permission\Middleware\RoleMiddleware;
+use App\Filament\Pages\Auth\Login as CustomLogin;
 
 class UserPanelPanelProvider extends PanelProvider
 {
@@ -26,7 +27,7 @@ class UserPanelPanelProvider extends PanelProvider
         return $panel
             ->id('userPanel')
             ->path('user')
-            ->login()
+            ->login(CustomLogin::class)
             ->colors([
                 'primary' => Color::Green,
             ])

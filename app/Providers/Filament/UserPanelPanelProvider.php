@@ -2,24 +2,27 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\Login as CustomLogin;
+use App\Filament\UserPanel\Pages\Auth\Profile;
+use App\Filament\UserPanel\Pages\UserDashboard;
+use App\Http\Middleware\EnsureActiveUser;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Pages;
+use Filament\Navigation\NavigationItem;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Widgets;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Route;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Spatie\Permission\Middleware\RoleMiddleware;
-use App\Filament\Pages\Auth\Login as CustomLogin;
-use App\Http\Middleware\EnsureActiveUser;
 
 class UserPanelPanelProvider extends PanelProvider
 {
@@ -29,19 +32,49 @@ class UserPanelPanelProvider extends PanelProvider
             ->id('userPanel')
             ->path('user')
             ->login(CustomLogin::class)
+            ->profile(Profile::class, isSimple: false)
+            ->brandName('Wrongshock')
+            ->brandLogo(fn () => view('filament.user-panel.hooks.brand'))
+            ->brandLogoHeight('3rem')
+            ->sidebarWidth('15.5rem')
             ->colors([
-                'primary' => Color::Green,
+                'primary' => Color::hex('#2F7D5A'),
             ])
+            ->renderHook(
+                PanelsRenderHook::STYLES_AFTER,
+                fn () => view('filament.user-panel.hooks.styles'),
+            )
+            ->renderHook(
+                PanelsRenderHook::TOPBAR_START,
+                fn () => view('filament.user-panel.hooks.topbar-title'),
+            )
+            ->renderHook(
+                PanelsRenderHook::TOPBAR_END,
+                fn () => view('filament.user-panel.hooks.topbar-identity'),
+            )
+            ->renderHook(
+                PanelsRenderHook::SIDEBAR_FOOTER,
+                fn () => view('filament.user-panel.hooks.sidebar-footer'),
+            )
             ->discoverResources(in: app_path('Filament/UserPanel/Resources'), for: 'App\\Filament\\UserPanel\\Resources')
             ->discoverPages(in: app_path('Filament/UserPanel/Pages'), for: 'App\\Filament\\UserPanel\\Pages')
             ->pages([
-                Pages\Dashboard::class,
+                UserDashboard::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/UserPanel/Widgets'), for: 'App\\Filament\\UserPanel\\Widgets')
-            ->widgets([
-                Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
+            ->navigationItems([
+                NavigationItem::make('Profil')
+                    ->icon('heroicon-o-user-circle')
+                    ->activeIcon('heroicon-s-user-circle')
+                    ->isActiveWhen(fn (): bool => request()->routeIs(Profile::getRouteName('userPanel')))
+                    ->sort(3)
+                    ->url(fn (): string => Profile::getUrl(panel: 'userPanel')),
             ])
+            ->authenticatedRoutes(function (): void {
+                Route::get('users', fn () => redirect(Profile::getUrl(panel: 'userPanel')))
+                    ->name('legacy-profile.index');
+                Route::get('users/{record}/edit', fn () => redirect(Profile::getUrl(panel: 'userPanel')))
+                    ->name('legacy-profile.edit');
+            })
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -52,12 +85,12 @@ class UserPanelPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
-                
+
             ])
             ->authMiddleware([
                 Authenticate::class,
                 EnsureActiveUser::class,
-                RoleMiddleware::class . ':user',
+                RoleMiddleware::class.':user',
             ]);
     }
 }

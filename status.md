@@ -2,7 +2,7 @@
 
 ## Overall
 
-**Current status: M7.5 COMPLETE / M8 NOT STARTED**
+**Current status: P1.6 COMPLETE / M8 COMPLETE**
 
 This document tracks implementation against `prd.md`. It must be updated
 after every meaningful coding session.
@@ -18,7 +18,13 @@ snapshots are persisted for posted deposits. - Reconciliation and opening
 balance migration are implemented through `BalanceReconciliationService` and
 `finance:reconcile`. - Canonical unit is kg and quantity precision is
 decimal(12,3). - Domain coverage exists for deposit, cancellation, withdrawal,
-reconciliation, and authorization flows. - M8 documentation and cleanup remain.
+ reconciliation, and authorization flows. - M8 documentation and cleanup are
+ complete.
+
+Current verified development DB: 2 users, cached balance total 2,017,800, 5
+ledger entries, 2 opening-balance entries, ledger net 2,017,800, 2 deposits,
+4 deposit items, and 0 withdrawals. Reconciliation reports MATCH for both
+users.
 
 ## Milestones
 
@@ -201,6 +207,74 @@ confirmed that the obsolete observer balance mutation and unsafe financial form
 paths were already removed in earlier milestones; no additional cleanup was
 needed.
 
+### P1.1 --- User Design Foundation
+
+Status: COMPLETE. User panel branding now uses Wrongshock and the approved
+green primary palette. The custom user dashboard has a responsive surface/card
+foundation, consistent Rupiah presentation, accessible table headings, and
+textual deposit status badges. The misleading hardcoded gold balance was
+removed without changing financial data or services.
+
+### P1.2 --- User Navigation
+
+Status: COMPLETE. The user panel now uses the custom Beranda as its only
+effective dashboard destination. The default Filament dashboard and technical
+widgets were removed from the user panel. User profile navigation is labeled
+Profil without an admin-style navigation group; authentication, role checks,
+and profile ownership scoping remain unchanged.
+
+### P1.3 --- User Dashboard Redesign
+
+Status: COMPLETE. The user Beranda now uses a mobile-first consumer layout
+with greeting, member number, balance hero, safe profile/recent-deposit actions,
+and one recent-deposit card list. Deposit presentation uses historical snapshot
+fields with legacy fallbacks, readable Rupiah/quantity/date formatting, textual
+status labels, cancelled-state messaging, and a friendly empty state. No
+financial services, ledger semantics, authorization rules, or development
+financial data were changed.
+
+### P1.4 --- User Deposit History
+
+Status: COMPLETE. Added read-only user-facing list and detail pages for deposit
+history at `/user/setoran` and `/user/setoran/{depositId}`. History is scoped to
+the authenticated user, paginated, newest-first, filterable by status, and uses
+historical snapshots with safe legacy fallbacks. Deposit creation/edit/delete/
+cancellation actions are not exposed. Dashboard navigation now links to the
+dedicated history page; no financial service, ledger semantics, authorization
+rules, or development financial data were changed.
+
+### P1.4.1 --- User Visual Refresh & Contrast Fix
+
+Status: COMPLETE. Refined the user-facing dashboard, deposit history, and
+deposit detail pages with the approved cheerful eco-finance palette, stronger
+contrast, wider desktop content, richer cards, clearer status badges, friendly
+empty states, and CSS-only decorative elements. The user panel navigation and
+admin panel behavior remain unchanged. No business logic, financial data,
+domain service, ledger, balance, or database schema was changed.
+
+### P1.4.2 --- Reference-Matched User UI Rebuild
+
+Status: COMPLETE / VISUAL APPROVED. Rebuilt the user panel shell and
+user-facing pages around the approved desktop composition: a 248px branded
+sidebar, 80px identity topbar, wide content canvas, local illustrated eco
+heroes, truthful history summary
+cards, structured transaction cards, and environmental footer banners. Custom
+shell CSS is loaded only by `userPanel`, so the admin panel is unaffected. No
+domain service, authorization, financial semantics, schema, or persisted data
+was changed.
+
+### P1.6 --- User Profile Redesign
+
+Status: COMPLETE. Replaced the user panel's one-record CRUD resource with a
+direct `/user/profile` page using the approved P1.4.2 shell and card system.
+Users can update their name, unique email, dependent district/subdistrict,
+address, optional confirmed password, and optional profile photo. The update
+boundary explicitly excludes member number, balance, status, roles, and all
+financial fields. Profile photos use the public disk under a per-user directory
+with JPEG/PNG/WebP and 2 MB limits; owned replaced files are removed after
+commit while legacy paths are preserved safely. No financial data, domain
+service, schema, or admin panel was changed.
+
 ## Critical Rules During Implementation
 
 -   Never "fix" historical financial data by deleting records.
@@ -224,7 +298,8 @@ needed.
 -   [x] Exact correction workflow: cancel + replacement.
 -   [x] Current seeded/manual balances were approved as opening-balance
     candidates and represented by M5 opening ledger entries.
--   [x] Existing deposits: none; database baseline had zero deposits.
+-   [x] Initial audited baseline had no deposits; current verified development
+    data is documented in the source baseline above and remains read-only.
 
 ## Current Known Risks
 
@@ -237,6 +312,121 @@ needed.
 ## Session Log
 
 Add entries in reverse chronological order.
+
+### 2026-09-21 — P1.6 User Profile Redesign
+
+- Added direct authenticated `/user/profile` architecture based on Filament's
+  transaction-aware profile page; removed the user-facing one-record resource
+  and retained its two URLs as authenticated redirects.
+- Added the approved Wrongshock visual language to the profile hero, identity,
+  initials/photo avatar, personal data, address, security, and save areas.
+- Added optional profile upload with preview, public per-user storage,
+  JPEG/PNG/WebP allow-list, 2 MB limit, and after-commit cleanup restricted to
+  files owned by that user's profile directory.
+- Added explicit writable-field allow-list, owner policy authorization, unique
+  email validation, dependent location controls and server-side pairing rule,
+  optional confirmed password hashing, and friendly success feedback.
+- Focused P1.6 coverage: 10 tests passed, 74 assertions. Full regression: 98
+  tests passed, 451 assertions. Composer audit: 0 advisories.
+- Development financial baseline remained unchanged at 2 users, cached and
+  ledger net 2,017,800, 5 ledger entries, 2 deposits, 4 deposit items, and 0
+  withdrawals; reconciliation remained 2 MATCH and 0 MISMATCH.
+- Browser desktop/mobile verification was unavailable and was not claimed.
+
+### 2026-09-21 — P1.4.2 Reference-Matched User UI Rebuild
+
+- Added a panel-scoped Wrongshock shell with consumer sidebar branding,
+  high-contrast active navigation, page-aware topbar titles, member identity,
+  and a lower environmental message.
+- Added a lightweight local eco-community SVG and used it in large responsive
+  heroes on Beranda and Riwayat Setoran; no external image or package was added.
+- Rebuilt Beranda around the illustrated greeting, richer balance composition,
+  quick actions, structured recent transactions, and environmental banner.
+- Rebuilt Riwayat Setoran with posted-only count/value summaries, a truthful
+  cancelled count, segmented filters, reference-style date blocks, item rows,
+  detail actions, totals, and cancellation notices.
+- Rebuilt Setoran Detail with the same shell, summary, item hierarchy, total,
+  cancellation treatment, and environmental banner.
+- All presentation CSS is loaded only through `UserPanelPanelProvider`; admin
+  styling and behavior were not modified.
+- Focused user-panel regression: 16 tests passed, 84 assertions. Browser visual
+  match was not verified because browser tooling was unavailable.
+- Full regression: 88 tests passed, 377 assertions. Composer audit: 0
+  advisories. Post-change reconciliation remained 2 MATCH and 0 MISMATCH; all
+  verified financial counts and totals remained unchanged.
+
+### 2026-09-21 — P1.4 User Deposit History
+
+- Added `DepositHistory` at `/user/setoran` with ten-record pagination, newest-
+  first ordering, and simple Semua/Berhasil/Dibatalkan/Draft filters.
+- Added read-only `DepositDetail` at `/user/setoran/{depositId}` with ownership-
+  scoped lookup, historical item details, totals, status, and cancellation
+  reason messaging.
+- Reused a small `UserDepositPage` presentation/query foundation across
+  Beranda, list, and detail pages to keep money, date, quantity, status, and
+  snapshot fallback display consistent.
+- Updated Beranda's `Lihat riwayat` action to use the dedicated history route.
+- Added focused history tests for ownership, pagination, filtering, snapshots,
+  deleted master items, cancellation, empty states, detail access, and
+  non-mutation. Focused tests passed: 7 tests, 44 assertions.
+- Full regression: 88 tests passed, 377 assertions. Composer audit: 0
+  advisories. Development financial data remained read-only.
+
+### 2026-09-21 — P1.4.1 User Visual Refresh & Contrast Fix
+
+- Refreshed Beranda with a high-contrast green balance hero, friendly greeting,
+  action cards, richer recent-deposit cards, and a clearer empty state.
+- Refreshed Riwayat Setoran with a lightweight CSS-only hero, accessible status
+  pills, cleaner transaction cards, and safer pagination overflow handling.
+- Refreshed Setoran Detail with matching summary, item, total, and cancellation
+  surfaces; status colors now use dark text on light backgrounds.
+- Standardized posted, cancelled, and draft badge colors through the existing
+  presentation helper without changing status semantics or queries.
+- Focused user-panel tests passed: 16 tests, 84 assertions. Full regression
+  passed: 88 tests, 377 assertions. Composer audit: 0 advisories.
+- Browser verification was not available; desktop/mobile visual inspection is
+  still required before P1.6.
+
+### 2026-09-21 — P1.3 User Dashboard Redesign
+
+- Replaced the overlapping transaction/activity tables with one mobile-first
+  `Setoran Terbaru` card list limited to five deposits.
+- Kept dashboard data scoped to the authenticated user and changed the query to
+  one eager-loaded deposit collection with only required item fields.
+- Displayed historical name, category, unit, price, quantity, and subtotal
+  snapshots before legacy master-data fallbacks; current master price is never
+  used for historical presentation.
+- Added Indonesian-friendly compact dates, canonical three-decimal quantity
+  display, consistent Rupiah formatting, and explicit posted/cancelled/draft
+  wording.
+- Added cancelled-deposit reason messaging without presenting the amount as
+  active income. Added safe handling for empty deposits, missing items, missing
+  snapshots, and deleted master relations.
+- Added only valid quick actions: recent-deposit anchor and authenticated
+  user's profile URL. No P1.4 history page or future feature was added.
+- Focused dashboard tests: 6 passed, 31 assertions. Full suite: 81 passed,
+  333 assertions. Composer audit: 0 advisories.
+- Development financial data remained read-only during the redesign.
+
+### 2026-09-21 — P1.1/P1.2 User Foundation & Navigation
+
+- Replaced the user panel's default Filament dashboard with the existing custom
+  dashboard as the single home destination from `/user`.
+- Removed user-panel `AccountWidget` and `FilamentInfoWidget` registration;
+  admin panel widgets were unchanged.
+- Added Wrongshock user-panel branding and `#2F7D5A`-based Filament primary
+  colors.
+- Removed the misleading hardcoded gold balance calculation and presentation.
+- Removed fixed square dashboard cards and the unlabelled chart presentation;
+  retained the existing deposit/activity data without changing financial
+  semantics.
+- Added consistent `Rp1.000.000` presentation, responsive table wrappers,
+  snapshot-first item labels, textual deposit status badges, semantic table
+  headings, and accessible image alt text.
+- Relabeled the user resource to Profil and removed its empty create action;
+  ownership query remains restricted to the authenticated user.
+- Added three navigation/access regression tests. Focused tests passed: 3
+  tests, 9 assertions. No financial service or database data was changed.
 
 ### 2026-09-21 — M8 Documentation & Cleanup
 

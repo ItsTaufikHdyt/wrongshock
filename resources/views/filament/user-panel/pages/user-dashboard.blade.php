@@ -1,176 +1,118 @@
 <x-filament::page>
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {{-- Kiri: Foto & Kartu --}}
-        <div class="lg:col-span-2 flex flex-wrap gap-4 items-stretch">
-            {{-- Foto User --}}
-            <div class="bg-white rounded-xl overflow-hidden shadow flex justify-center items-center p-4 w-60 h-60">
-                @if ($user->image != null)
-                <img src="{{ asset('storage/'.$user->image) }}" style="height: 300px; width:300px"
-                    class=" object-cover">
-                @else
-                <img src="{{ asset('assets/image/user.png') }}" style="height: 300px; width:300px"
-                    class=" object-cover">
-                @endif
+    <div class="ws-page">
+        <section class="ws-hero" aria-labelledby="dashboard-hero-title">
+            <div class="ws-hero-copy">
+                <span class="ws-eyebrow">Selamat datang kembali</span>
+                <h1 id="dashboard-hero-title">Halo, {{ $user->name }}!</h1>
+                <p>Yuk, terus berkontribusi untuk lingkungan yang lebih bersih dan sehat.</p>
+                <span class="ws-member-pill">Anggota #{{ $user->number }}</span>
             </div>
+            <img src="{{ asset('images/wrongshock/eco-community.svg') }}" alt="" class="ws-hero-illustration" aria-hidden="true">
+        </section>
 
-            {{-- Kartu Identitas --}}
-            <div class="bg-white rounded-xl overflow-hidden shadow w-60 h-60 flex flex-col">
-                <div class="bg-green-100 flex items-center justify-center h-1/2">
-                    <img src="{{ asset('assets/image/card.png') }}" class="w-full h-full object-cover">
-                </div>
-                <div class="p-4 text-center flex-1 flex flex-col justify-center">
-                    <p class="font-bold text-sm text-green-800">{{$user->number}}</p>
-                    <p class="text-gray-700 text-sm">{{$user->name}}</p>
-                </div>
-            </div>
-
-            {{-- Saldo --}}
-            <div class="flex flex-col gap-4 w-60 h-60">
-                <!-- Saldo Tunai -->
-                <div
-                    class="bg-white rounded-xl overflow-hidden shadow flex flex-col justify-center items-center text-center space-y-2 flex-1">
-                    <p class="text-gray-500 text-sm">Saldo Tunai</p>
-                    <img src="{{ asset('assets/image/money-bill.png') }}" class="w-14 h-14 object-cover">
-                    <p class="text-xl font-bold text-green-700 p-2">Rp {{ number_format($user->balance ?? 0, 0, ',',
-                        '.') }},-</p>
-                </div>
-
-                <!-- Saldo Emas -->
-                <div
-                    class="bg-white rounded-xl overflow-hidden shadow flex flex-col justify-center items-center text-center space-y-2 flex-1">
-                    <p class="text-gray-500 text-sm">Saldo Emas</p>
-                    <img src="{{ asset('assets/image/gold.png') }}" class="w-14 h-14 object-cover">
-                    <p class="text-xl font-bold text-green-700 p-2">{{ number_format($saldoEmas, 2, ',', '.') }} Gram
-                    </p>
-                </div>
-            </div>
-            <div class="bg-white rounded-xl overflow-hidden shadow w-60 h-60 flex flex-col">
-                <div class="bg-white rounded-xl overflow-hidden shadow flex-1 p-4 flex flex-col justify-between">
-                    <!-- Tombol Aksi -->
-                    <div class="flex justify-between items-center mb-4">
+        <section class="ws-dashboard-grid" aria-label="Ringkasan akun">
+            <article class="ws-balance-card" aria-labelledby="balance-heading">
+                <div class="ws-balance-content">
+                    <span class="ws-balance-icon" aria-hidden="true">
+                        <x-filament::icon icon="heroicon-o-wallet" />
+                    </span>
+                    <div>
+                        <p id="balance-heading">Saldo Tabungan</p>
+                        <strong>{{ $this->formatRupiah($user->balance) }}</strong>
+                        <span>Saldo tabungan sampah Anda saat ini</span>
                     </div>
-                    <!-- Box Grafik -->
-                    <div class="bg-white shadow rounded-xl p-4 flex-1 flex items-center justify-center text-gray-400">
-                        <div style="max-height:320px; overflow-y:auto; width:100%;">
-                            <canvas id="wastePieChart" width="250" height="250"></canvas>
+                </div>
+                <span class="ws-balance-leaf ws-balance-leaf-one" aria-hidden="true"></span>
+                <span class="ws-balance-leaf ws-balance-leaf-two" aria-hidden="true"></span>
+            </article>
+
+            <div class="ws-quick-actions" aria-labelledby="quick-actions-heading">
+                <div class="ws-section-heading ws-section-heading-compact">
+                    <div>
+                        <h2 id="quick-actions-heading">Akses Cepat</h2>
+                        <p>Pilih tujuan Anda.</p>
+                    </div>
+                </div>
+                <div class="ws-action-grid">
+                    <a href="{{ $this->historyUrl() }}" class="ws-action-card">
+                        <span class="ws-icon-box ws-icon-mint" aria-hidden="true"><x-filament::icon icon="heroicon-o-document-text" /></span>
+                        <span><strong>Riwayat Setoran</strong><small>Lihat transaksi</small></span>
+                        <x-filament::icon icon="heroicon-m-chevron-right" class="ws-action-arrow" aria-hidden="true" />
+                    </a>
+                    <a href="{{ $this->profileUrl() }}" class="ws-action-card">
+                        <span class="ws-icon-box ws-icon-yellow" aria-hidden="true"><x-filament::icon icon="heroicon-o-user-circle" /></span>
+                        <span><strong>Profil saya</strong><small>Kelola akun</small></span>
+                        <x-filament::icon icon="heroicon-m-chevron-right" class="ws-action-arrow" aria-hidden="true" />
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <section id="setoran-terbaru" class="ws-content-section" aria-labelledby="recent-deposits-heading">
+            <div class="ws-section-heading">
+                <div>
+                    <h2 id="recent-deposits-heading">Setoran Terbaru</h2>
+                    <p>Aktivitas setoran sampah Anda yang baru dicatat.</p>
+                </div>
+                <a href="{{ $this->historyUrl() }}" class="ws-text-link">Lihat semua <x-filament::icon icon="heroicon-m-arrow-right" aria-hidden="true" /></a>
+            </div>
+
+            <div class="ws-card-list">
+                @forelse ($deposits as $deposit)
+                    <article class="ws-transaction-card ws-transaction-card-compact" aria-label="Setoran {{ $this->formatDate($deposit->deposit_date) }}">
+                        <div class="ws-date-box">
+                            <x-filament::icon icon="heroicon-o-calendar-days" aria-hidden="true" />
+                            <time datetime="{{ $deposit->deposit_date->toDateString() }}">{{ $this->formatDate($deposit->deposit_date) }}</time>
                         </div>
+                        <div class="ws-transaction-body">
+                            <div class="ws-transaction-head">
+                                <div>
+                                    <h3>Setoran Sampah</h3>
+                                    <p><x-filament::icon icon="heroicon-o-cube" aria-hidden="true" /> {{ $deposit->items->count() }} item sampah</p>
+                                </div>
+                                <span class="ws-status {{ $this->statusClasses($deposit->status) }}">{{ $this->statusLabel($deposit->status) }}</span>
+                            </div>
+                            <div class="ws-item-list">
+                                @forelse ($deposit->items as $item)
+                                    <div class="ws-item-row">
+                                        <span class="ws-item-icon" aria-hidden="true"><x-filament::icon icon="heroicon-o-arrow-path-rounded-square" /></span>
+                                        <div class="ws-item-copy">
+                                            <strong>{{ $this->itemName($item) }}</strong>
+                                            <span>
+                                                {{ $this->formatQuantity($item->quantity) }} {{ $this->itemUnit($item) }}
+                                                @if ($item->unit_price_snapshot !== null)
+                                                    &times; {{ $this->formatRupiah($item->unit_price_snapshot) }} / {{ $this->itemUnit($item) }}
+                                                @endif
+                                            </span>
+                                        </div>
+                                        <strong class="ws-item-value">{{ $this->formatRupiah($item->subtotal) }}</strong>
+                                    </div>
+                                @empty
+                                    <p class="ws-empty-copy">Detail item setoran belum tersedia.</p>
+                                @endforelse
+                            </div>
+                            <div class="ws-transaction-total">
+                                <span>Total Setoran</span>
+                                <strong>{{ $this->formatRupiah($deposit->total_amount) }}</strong>
+                            </div>
+                            @if ($deposit->status === 'cancelled')
+                                <div class="ws-cancelled-note">
+                                    <x-filament::icon icon="heroicon-o-exclamation-triangle" aria-hidden="true" />
+                                    <p><strong>Setoran ini telah dibatalkan.</strong>@if (filled($deposit->cancellation_reason)) <span>Alasan: {{ $deposit->cancellation_reason }}</span>@endif</p>
+                                </div>
+                            @endif
+                        </div>
+                    </article>
+                @empty
+                    <div class="ws-empty-state">
+                        <span class="ws-empty-icon" aria-hidden="true"><x-filament::icon icon="heroicon-o-document-text" /></span>
+                        <h3>Belum ada setoran</h3>
+                        <p>Riwayat setoran sampah Anda akan muncul di sini setelah transaksi dicatat oleh petugas.</p>
                     </div>
-                </div>
+                @endforelse
             </div>
+        </section>
 
-
-        </div>
-
-        {{-- Riwayat --}}
-        <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bg-white shadow rounded-xl p-6">
-                <h2 class="font-semibold text-lg text-center mb-4">Riwayat Transaksi</h2>
-                <table class="w-full text-sm text-left border-collapse">
-                    <thead>
-                        <tr class="border-b">
-                            <th class="p-2">Tanggal</th>
-                            <th class="p-2">Total Setoran</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($transactions as $trx)
-                        <tr class="border-b">
-                            <td class="p-2">{{ \Carbon\Carbon::parse($trx->deposit_date)->format('d M Y') }}</td>
-                            <td class="p-2">Rp {{ number_format($trx->total_amount, 0, ',', '.') }}</td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="2" class="p-2 text-center text-gray-500">Belum ada transaksi</td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="bg-white shadow rounded-xl p-6">
-                <h2 class="font-semibold text-lg text-center mb-4">Riwayat Kegiatan</h2>
-                <table class="w-full text-sm text-left border-collapse">
-                    <thead>
-                        <tr class="border-b">
-                            <th class="p-2">Tanggal</th>
-                            <th class="p-2">Jenis Sampah</th>
-                            <th class="p-2">Jumlah (Kg)</th>
-                            <th class="p-2">Subtotal (Rp)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($wasteHistory as $deposit)
-                        @foreach ($deposit->items as $item)
-                        <tr class="border-b">
-                            <td class="p-2">{{ \Carbon\Carbon::parse($deposit->deposit_date)->format('d M Y') }}</td>
-                            <td class="p-2">{{ $item->wasteItem->category ?? '-' }}</td>
-                            <td class="p-2">{{ $item->quantity }}</td>
-                            <td class="p-2">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
-                        </tr>
-                        @endforeach
-                        @empty
-                        <tr>
-                            <td colspan="4" class="p-2 text-center text-gray-500">Belum ada kegiatan setor limbah</td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
+        @include('filament.user-panel.partials.eco-banner')
     </div>
-
-    {{-- Tambahkan CDN Chart.js dan script grafik sebelum penutup x-filament::page --}}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // Ambil data kategori dan jumlah dari PHP
-        @php
-            $wastePie = [];
-            foreach ($wasteHistory as $deposit) {
-                foreach ($deposit->items as $item) {
-                    $cat = $item->wasteItem->category ?? 'Lainnya';
-                    if (!isset($wastePie[$cat])) $wastePie[$cat] = 0;
-                    $wastePie[$cat] += $item->quantity;
-                }
-            }
-            $totalWaste = array_sum($wastePie);
-            $wastePiePercent = [];
-            foreach ($wastePie as $cat => $qty) {
-                $wastePiePercent[$cat] = $totalWaste > 0 ? round(($qty / $totalWaste) * 100, 1) : 0;
-            }
-        @endphp
-        const pieLabelsRaw = {!! json_encode(array_keys($wastePie)) !!};
-        const pieData = {!! json_encode(array_values($wastePie)) !!};
-        const piePercent = {!! json_encode(array_values($wastePiePercent)) !!};
-
-        // Gabungkan label dengan persentase
-        const pieLabels = pieLabelsRaw.map((label, idx) => `${label} (${piePercent[idx]}%)`);
-
-        const ctx = document.getElementById('wastePieChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: pieLabels,
-                datasets: [{
-                    data: pieData,
-                    backgroundColor: [
-                        '#4ade80', '#fbbf24', '#60a5fa', '#f87171', '#a78bfa', '#34d399', '#f472b6'
-                    ],
-                }]
-            },
-            options: {
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'bottom',
-                        labels: {
-                            boxWidth: 16,
-                            font: { size: 12 },
-                            padding: 10,
-                        },
-                        maxHeight: 120 // Batasi tinggi legend agar scrollable
-                    }
-                }
-            }
-        });
-    </script>
 </x-filament::page>

@@ -6,9 +6,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Validation\ValidationException;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Spatie\Permission\Traits\HasRoles;
+use App\Models\SubDistrict;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasRoles;
@@ -27,7 +31,6 @@ class User extends Authenticatable
         'sub_district_id',
         'email',
         'password',
-        'balance',
         'address',
         'image',
         'status',
@@ -53,7 +56,40 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'balance' => 'integer',
+            'status' => 'integer',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $user): void {
+            if (
+                $user->district_id !== null
+                && $user->sub_district_id !== null
+                && ! SubDistrict::query()
+                    ->whereKey($user->sub_district_id)
+                    ->where('district_id', $user->district_id)
+                    ->exists()
+            ) {
+                throw ValidationException::withMessages([
+                    'sub_district_id' => 'The sub-district must belong to the selected district.',
+                ]);
+            }
+        });
+    }
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        if ((int) $this->status !== 1) {
+            return false;
+        }
+
+        return match ($panel->getId()) {
+            'adminPanel' => $this->hasRole('admin'),
+            'userPanel' => $this->hasRole('user') && ! $this->hasRole('admin'),
+            default => false,
+        };
     }
 
 
@@ -70,6 +106,16 @@ class User extends Authenticatable
     public function wasteDeposits()
     {
         return $this->hasMany(WasteDeposit::class, 'user_id');
+    }
+
+    public function withdrawals()
+    {
+        return $this->hasMany(Withdrawal::class, 'user_id');
+    }
+
+    public function ledgerEntries()
+    {
+        return $this->hasMany(LedgerEntry::class, 'user_id');
     }
 
 }

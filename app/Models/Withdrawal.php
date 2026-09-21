@@ -4,18 +4,30 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Withdrawals extends Model
+class Withdrawal extends Model
 {
     protected $table = 'withdrawals';
 
     protected $fillable = [
-        'id',
-        'user_id',
-        'amount',
-        'status',
-        'created_at',
-        'updated_at',
+        'note',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'amount' => 'integer',
+            'withdrawal_date' => 'date',
+            'requested_date' => 'date',
+            'processed_date' => 'date',
+        ];
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (self $withdrawal): void {
+            throw new \LogicException('Withdrawal history cannot be deleted.');
+        });
+    }
 
     public function user()
     {
@@ -27,9 +39,9 @@ class Withdrawals extends Model
         return $query->where('status', 'pending');
     }
 
-    public function scopeCompleted($query)
+    public function scopeApproved($query)
     {
-        return $query->where('status', 'completed');
+        return $query->where('status', 'approved');
     }
 
     public function scopeRejected($query)

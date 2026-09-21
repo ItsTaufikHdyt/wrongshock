@@ -6,6 +6,7 @@ use App\Filament\Resources\WasteDepositResource\Pages;
 use App\Filament\Resources\WasteDepositResource\RelationManagers;
 use App\Models\WasteDeposit;
 use App\Models\WasteItem;
+use App\Services\DepositService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class WasteDepositResource extends Resource
 {
@@ -56,7 +58,6 @@ class WasteDepositResource extends Resource
 
                 Forms\Components\Repeater::make('items')
                     ->label('Item Sampah')
-                    ->relationship()
                     ->schema([
                         Forms\Components\Select::make('waste_item_id')
                             ->label('Jenis Sampah')
@@ -127,20 +128,53 @@ class WasteDepositResource extends Resource
                     ->money('IDR')->label('Total Setor')
                     ->sortable()
                     ->searchable(),
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->colors([
+                        'gray' => 'draft',
+                        'success' => 'posted',
+                        'danger' => 'cancelled',
+                    ]),
+                Tables\Columns\TextColumn::make('cancelled_at')
+                    ->dateTime()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('cancellation_reason')
+                    ->limit(40)
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 //
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn (WasteDeposit $record): bool => $record->status === 'draft'),
+                Tables\Actions\DeleteAction::make()
+                    ->visible(fn (WasteDeposit $record): bool => $record->status === 'draft'),
+                Tables\Actions\Action::make('cancel')
+                    ->label('Batalkan')
+                    ->color('danger')
+                    ->icon('heroicon-o-x-circle')
+                    ->visible(fn (WasteDeposit $record): bool => $record->status === 'posted')
+                    ->authorize(fn (): bool => Auth::user()?->hasRole('admin') ?? false)
+                    ->form([
+                        Forms\Components\Textarea::make('cancellation_reason')
+                            ->label('Alasan pembatalan')
+                            ->required()
+                            ->minLength(3)
+                            ->maxLength(1000),
+                    ])
+                    ->requiresConfirmation()
+                    ->modalHeading('Batalkan Transaksi')
+                    ->modalDescription('Transaksi tidak akan dihapus. Pengaruh saldonya akan dibalik.')
+                    ->modalSubmitActionLabel('Batalkan Transaksi')
+                    ->action(function (WasteDeposit $record, array $data): void {
+                        abort_unless(Auth::user()?->hasRole('admin'), 403);
+
+                        app(DepositService::class)->cancel($record, $data['cancellation_reason'], Auth::id());
+                    }),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->bulkActions([]);
     }
 
     public static function getRelations(): array
@@ -160,4 +194,14 @@ class WasteDepositResource extends Resource
     }
 
     protected static function afterSave(Model $record): void {}
+
+    public static function canEdit(Model $record): bool
+    {
+        return $record->status === 'draft';
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return $record->status === 'draft';
+    }
 }

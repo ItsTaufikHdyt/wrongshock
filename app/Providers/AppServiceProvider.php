@@ -2,9 +2,7 @@
 
 namespace App\Providers;
 
-use App\Models\WasteDeposit;
 use Illuminate\Support\ServiceProvider;
-use App\Observers\WasteDepositObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,6 +19,5 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        WasteDeposit::observe(WasteDepositObserver::class);
     }
 }

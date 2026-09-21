@@ -22,15 +22,4 @@ class WasteItem extends Model
         return $this->hasMany(WasteDepositItem::class, 'waste_item_id');
     }
 
-    // Tambahkan accessor atau mutator jika diperlukan
-    public function getFormattedPriceAttribute()
-    {
-        return number_format($this->unit_price, 2);
-    }
-
-    // Contoh method untuk mendapatkan nama lengkap
-    public function getFullNameAttribute()
-    {
-        return $this->name . ' - ' . $this->description;
-    }
 }

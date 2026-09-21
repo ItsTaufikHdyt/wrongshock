@@ -13,8 +13,9 @@ use Filament\Tables\Table;
 use App\Models\District;
 use App\Models\SubDistrict;
 use Illuminate\Support\Str;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class UserResource extends Resource
 {
@@ -140,6 +141,11 @@ class UserResource extends Resource
         return [
             //
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->whereKey(Auth::id());
     }
 
     public static function getPages(): array

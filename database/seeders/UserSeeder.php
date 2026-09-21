@@ -25,7 +25,7 @@ class UserSeeder extends Seeder
             'number' => '001010120251234', 
             'password' => bcrypt('admin123'),
             'address' => 'Jl. Admin No. 1',
-            'balance' => 1000000, // contoh saldo awal
+            'balance' => 0,
             'district_id' => 1, 
             'sub_district_id' => 1,
             'status' => '1',
@@ -40,7 +40,7 @@ class UserSeeder extends Seeder
             'number' => '001010220254321', 
             'password' => bcrypt('user123'),
             'address' => 'Jl. Admin No. 2',
-            'balance' => 1000000,
+            'balance' => 0,
             'district_id' => 1, 
             'sub_district_id' => 2, 
             'status' => '1',

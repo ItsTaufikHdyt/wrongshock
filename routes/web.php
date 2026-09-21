@@ -15,4 +15,6 @@ Route::get('/register', function () {
     return view('register');
 });
 
-Route::post('/storeRegister', [RegisterController::class, 'register'])->name('user.register');
+Route::post('/storeRegister', [RegisterController::class, 'register'])
+    ->middleware('throttle:6,1')
+    ->name('user.register');

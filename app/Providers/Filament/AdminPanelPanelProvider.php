@@ -19,6 +19,7 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use App\Filament\Pages\Auth\Login as CustomLogin;
+use App\Http\Middleware\EnsureActiveUser;
 
 class AdminPanelPanelProvider extends PanelProvider
 {
@@ -56,6 +57,7 @@ class AdminPanelPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                EnsureActiveUser::class,
                 RoleMiddleware::class . ':admin',
             ]);
     }

@@ -9,7 +9,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Spatie\Permission\Models\Role;
-use Illuminate\Support\Facades\Auth;
 
 
 class RegisterController extends Controller
@@ -22,21 +21,31 @@ class RegisterController extends Controller
             'name'                  => 'required|string|max:255',
             'email'                 => 'required|string|email|max:255|unique:users',
             'address'               => 'required|string|max:255',
-            'district'              => 'required|string|max:100',
-            'sub_district'          => 'required|string|max:100',
-            'password'              => 'required|string|min:6|confirmed',
+            'district'              => 'required|integer|exists:districts,id',
+            'sub_district'          => 'required|integer|exists:sub_districts,id',
+            'password'              => 'required|string|min:8|confirmed',
         ], [
             'email.unique'          => 'Email ini sudah terdaftar.',
             'password.confirmed'    => 'Konfirmasi password tidak sama.',
         ]);
 
         if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput($request->except(['password', 'password_confirmation']));
+        }
+
+        if (! SubDistrict::query()
+            ->whereKey($request->integer('sub_district'))
+            ->where('district_id', $request->integer('district'))
+            ->exists()) {
+            return redirect()->back()
+                ->withErrors(['sub_district' => 'The sub-district must belong to the selected district.'])
+                ->withInput($request->except(['password', 'password_confirmation']));
         }
 
         $userRole = Role::firstOrCreate(['name' => 'user']);
 
-        $user = Auth::user();
         $kodeKota = '001'; // Bontang
         $kodeDistrict = str_pad($request->district, 2, '0', STR_PAD_LEFT);
         $kodeSubDistrict = str_pad($request->sub_district, 2, '0', STR_PAD_LEFT);

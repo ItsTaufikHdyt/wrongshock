@@ -1,66 +1,131 @@
-# ♻️ Whrongshock
+# Wrongshock
 
-![Laravel](https://img.shields.io/badge/Laravel-10.x-red?logo=laravel)
-![PHP](https://img.shields.io/badge/PHP-%3E%3D8.1-blue?logo=php)
-![License](https://img.shields.io/badge/License-MIT-green)
+Wrongshock is a Laravel application for managing waste deposits, member
+balances, and withdrawals. Financial changes are posted through application
+services and recorded in an append-oriented ledger.
 
-Aplikasi manajemen **deposit dan penarikan sampah** berbasis Laravel.
+## Stack
 
----
+- PHP 8.2+
+- Laravel 12
+- Filament 3
+- Livewire 3
+- MySQL 8 for the Docker development environment
+- SQLite in-memory databases for automated tests
+- Vite and Tailwind CSS for frontend assets
 
-## 🚀 Fitur
-- 👤 Manajemen user dengan role (admin & user) menggunakan Spatie Permission
-- 💰 Deposit dan penarikan saldo
-- 🔄 Status penarikan menggunakan enum: `pending`, `approved`, `rejected`
+## Core Rules
 
----
+- `users.balance` is a cached balance; `account_ledger_entries` is the
+  reconciliation source.
+- Deposit posting creates a ledger credit and updates the cached balance in
+  one database transaction.
+- Posted deposits are cancelled, not deleted. Cancellation creates a reversal
+  ledger entry and restores the transaction's prior effect.
+- Deposit items store the price snapshot used at posting time. Historical
+  totals are not recalculated from the current waste-item price.
+- Withdrawal requests start as `pending`. Approval checks the balance while
+  holding the user row lock, then records a ledger debit. Rejection has no
+  balance effect.
+- Posted financial records and withdrawal history cannot be hard-deleted.
+- Subtotals and totals supplied by the UI are not trusted by the domain
+  services.
 
-## ⚙️ Requirement
-- PHP >= 8.1
-- Composer
-- MySQL/MariaDB
-- Laravel >= 10
+## Requirements
 
----
+Use Docker for the supported development setup. For a host-only setup, use
+PHP 8.2+, Composer, Node.js/npm, and MySQL 8, then configure the equivalent
+Laravel environment values.
 
-## 🛠️ Instalasi
+## Docker Setup
 
-1. **Clone repository**
-   ```
-   git clone <repo-url>
-   cd whrongshock
-   ```
+1. Copy the application environment file and generate an application key:
 
-2. **Install dependency**
-   ```
-   composer install
-   ```
-
-3. **Copy file `.env` dan sesuaikan konfigurasi database**
-   ```
+   ```sh
    cp .env.example .env
+   docker compose build
+   docker compose run --rm app php artisan key:generate
    ```
 
-4. **Generate key**
-   ```
-   php artisan key:generate
+2. Create `db.env` in the project root. It is intentionally ignored by Git:
+
+   ```dotenv
+   MYSQL_ROOT_PASSWORD=change-me
+   MYSQL_DATABASE=wrongshock
+   MYSQL_USER=wrongshock
+   MYSQL_PASSWORD=change-me
    ```
 
-5. **Jalankan migrasi dan seeder**
-   ```
-   php artisan migrate --seed
+   Use matching MySQL values in `.env`, for example `DB_HOST=db`,
+   `DB_DATABASE=wrongshock`, `DB_USERNAME=wrongshock`, and
+   `DB_PASSWORD=change-me`.
+
+3. Start the services:
+
+   ```sh
+   docker compose up -d
+   docker compose exec app php artisan migrate --seed
    ```
 
-6. **Jalankan aplikasi**
-   ```
-   php artisan serve
-   ```
----
+   The application is available at `http://localhost`. The optional PHP
+   development server port is `http://localhost:8002`, Vite uses port `5173`,
+   and Adminer uses `http://localhost:8080`.
 
-## 📄 Lisensi
+Do not commit `.env`, `db.env`, database volumes, or credentials. Change all
+development seed credentials before using the application outside a local
+environment.
+
+## Local Commands
+
+Run commands inside the app container:
+
+```sh
+docker compose exec app php artisan test
+docker compose exec app composer audit
+docker compose exec app php artisan finance:reconcile
+```
+
+`finance:reconcile` reports cached balances versus ledger net totals. The
+mutation modes are explicit and should be reviewed before use:
+
+```sh
+docker compose exec app php artisan finance:reconcile --create-opening-balances
+docker compose exec app php artisan finance:reconcile --repair-cache
+```
+
+Opening balances are created only for users with a positive cached balance and
+no existing financial history. Mismatches that cannot be proven safe are
+reported for review instead of being silently repaired.
+
+Install frontend dependencies only when frontend work is required, then run:
+
+```sh
+npm install
+npm run build
+```
+
+The repository does not currently include an npm lockfile, so frontend
+dependency resolution is not reproducible by `npm ci` yet.
+
+## Tests
+
+The test suite uses an isolated SQLite in-memory database configured by
+`phpunit.xml`. It covers transaction atomicity, price snapshots, fractional
+quantities, idempotency, cancellation, withdrawal locking, authorization, and
+reconciliation.
+
+The Docker database is development data and must not be reset or altered as a
+substitute for tests. Verify financial state with the reconciliation command
+after any maintenance operation.
+
+## Current Limitations
+
+- Pending withdrawals do not reserve balance; approval rechecks it under a row
+  lock.
+- Request-level idempotency keys are not implemented.
+- Cancellation is rejected if the cached balance cannot cover the reversal.
+- The application does not yet provide a production deployment configuration.
+
+## License
 
 MIT
-
----
-
-> Dibuat dengan ❤️ menggunakan Laravel & Spatie Permission.

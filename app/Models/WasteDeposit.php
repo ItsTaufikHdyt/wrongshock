@@ -3,17 +3,35 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use LogicException;
 
 class WasteDeposit extends Model
 {
+    protected static function booted(): void
+    {
+        static::deleting(function (WasteDeposit $deposit): void {
+            if (in_array($deposit->status, ['posted', 'cancelled'], true)) {
+                throw new LogicException('Posted or cancelled deposits cannot be deleted.');
+            }
+        });
+    }
+
     protected $table = 'waste_deposits';
 
     protected $fillable = [
         'user_id',
         'deposit_date',
-        'total_amount',
-        // Add other fields as necessary
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'deposit_date' => 'date',
+            'posted_at' => 'datetime',
+            'cancelled_at' => 'datetime',
+            'total_amount' => 'integer',
+        ];
+    }
 
     public function items()
     {
@@ -22,7 +40,17 @@ class WasteDeposit extends Model
 
     public function user()
     {
-        return $this->belongsTo(\App\Models\User::class);
+        return $this->belongsTo(User::class);
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function updatedBy()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
 
 }

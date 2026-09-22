@@ -1,351 +1,272 @@
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WRONGSHOCK INDONESIA - Platform Pengelolaan Sampah</title>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet" />
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="{{ url('css/style.css') }}">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Wrongshock adalah platform bank sampah digital untuk informasi harga, pencatatan setoran, saldo anggota, dan riwayat transaksi yang lebih terorganisir.">
+    <meta name="theme-color" content="#176B4A">
+    <title>Wrongshock — Bank Sampah Digital</title>
+    <link rel="stylesheet" href="{{ asset('css/public-home.css') }}">
 </head>
+<body class="ws-public-page">
+    <a href="#main-content" class="ws-public-skip-link">Lewati ke konten utama</a>
 
-<body>
-  <!-- Navigation -->
-  <nav class="navbar navbar-expand-lg navbar-light fixed-top">
-    <div class="container">
-      <a class="navbar-brand" href="#">WRONGSHOCK INDONESIA</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item">
-            <a class="nav-link" href="#tentang">Tentang Kami</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#layanan">Layanan</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#mitra">Mitra</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#kontak">Kontak</a>
-          </li>
-          <li class="nav-item dropdown">
-            <a class="btn btn-login dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-              aria-expanded="false">
-              Masuk
+    <header class="ws-public-header">
+        <nav class="ws-public-nav ws-public-container" aria-label="Navigasi utama">
+            <a href="#beranda" class="ws-public-brand" aria-label="Wrongshock, kembali ke Beranda">
+                <span class="ws-public-brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 32 32" fill="none">
+                        <path d="M16 27C9.4 27 5 22.4 5 16.3 5 9.2 10.7 5 17.2 5c4.2 0 7.7 2.1 9.8 5.4-3.1-.7-6.5.1-8.9 2.3-2.8 2.6-3.6 6.5-2.5 9.9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+                        <path d="M15.7 22.6c1.7-5 5-8.8 10.2-11.5M10.4 17.9c1.5.2 3 .7 4.3 1.6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+                    </svg>
+                </span>
+                <span><strong>Wrongshock</strong><small>Bank Sampah Digital</small></span>
             </a>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="{{ url('admin') }}">Masuk sebagai Admin</a></li>
-              <li><a class="dropdown-item" href="{{ url('user') }}">Masuk sebagai User</a></li>
-            </ul>
-          </li>
 
-        </ul>
-      </div>
-    </div>
-  </nav>
-
-  <!-- Hero Section -->
-  <section class="hero-section" style="margin-top: 80px">
-    <div class="container">
-      <div class="row align-items-center">
-        <div class="col-lg-12">
-          <h1 class="hero-title">
-            Selamat Datang,<br />
-            di <span class="brand">WRONGSHOCK!</span>
-          </h1>
-          <p class="lead">
-            Sebuah platform pengelolaan sampah yang lahir dari kegelisahan akan buruknya
-            <br>
-            sistem dan kesadaran pengelolaan limbah di masyarakat Kota Bontang
-          </p>
-          <a class="btn btn-register" href="{{ url('register') }}">Daftar</a>
-        </div>
-        <div class="col-lg-12">
-          <div class="banner-image"
-            style="background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('{{ asset('assets/image/bg1.png') }}');">
-            <div class="banner-text">#RongsokJadiPasok</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Purpose Section -->
-  <section class="py-5" id="tentang">
-    <div class="container">
-      <h2 class="section-title ">Apa Tujuan Kami?</h2>
-      <div class="row">
-        <div class="col-lg-4 mb-4">
-          <div class="card purpose-card">
-            <img src="{{ asset('assets/image/img1.png') }}" class="purpose-icon">
-            <h4>Sadar</h4>
-            <p>
-              Membuat masyarakat lebih sadar terkait dampak negatif sampah terhadap lingkungan.
-            </p>
-          </div>
-        </div>
-        <div class="col-lg-4 mb-4">
-          <div class="card purpose-card">
-            <img src="{{asset('assets/image/img2.png')}}" class="purpose-icon">
-            <h4>Sistem</h4>
-            <p>
-              Menciptakan sistem yang memudahkan semua pihak untuk saling terhubung dalam ekosistem pengelolaan sampah.
-            </p>
-          </div>
-        </div>
-        <div class="col-lg-4 mb-4">
-          <div class="card purpose-card">
-            <img src="{{asset('assets/image/img3.png')}}" class="purpose-icon">
-            <h4>Gaya Hidup</h4>
-            <p>
-              Menjadikan pengelolaan sampah sebagai bagian dari gaya hidup sehari-hari, bukan hanya kampanye sesaat.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Why Section -->
-  <section class="why-section" id="layanan">
-    <div class="container">
-      <div class="row align-items-center">
-        <div class="col-lg-6">
-          <h2 class="section-title">
-            Mengapa harus bergabung dengan WRONGSHOCK?
-          </h2>
-
-          <div class="mb-4">
-            <h5><strong>Perubahan yang Bermakna</strong></h5>
-            <p>
-              Menantang pola lama, menciptakan gagasan baru, dan menggerakkan transformasi sosial, budaya, maupun
-              industri kreatif.
-            </p>
-          </div>
-
-          <div class="mb-4">
-            <h5><strong>Kolaborasi Tanpa Batas</strong></h5>
-            <p>
-              Tidak ada hirarki yang mengekang kreativitas, melainkan semangat kolektif menciptakan sesuatu yang lebih
-              besar dari diri sendiri.
-            </p>
-          </div>
-
-          <div class="mb-4">
-            <h5><strong>Kesejahteraan sebagai Pondasi</strong></h5>
-            <p>
-              Keseimbangan antara kerja dan hidup, kesehatan mental, serta rasa aman untuk berkembang.
-            </p>
-          </div>
-
-          <div class="mt-4">
-            <div class="dropdown d-inline">
-                <button class="btn btn-contact dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    Masuk
-                </button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="{{ url('admin') }}">Masuk sebagai Admin</a></li>
-                    <li><a class="dropdown-item" href="{{ url('user') }}">Masuk sebagai User</a></li>
-                </ul>
-            </div>
-            <a class="btn btn-outline-contact" href="https://wa.me/6281234567890" target="_blank" rel="noopener">
-                Hubungi Kami
-            </a>
-          </div>
-        </div>
-        <div class="col-lg-6">
-          <div class="why-image" style="background-image: url('{{ asset('assets/image/why.png') }}');"></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- SDG Section -->
-  <section class="py-5" id="mitra">
-    <div class="container">
-      <h2 class="section-title">Prinsip Perjalanan WRONGSHOCK</h2>
-      <div class="row">
-        <div class="col-lg-4 mb-4">
-          <div class="sdg-card">
-            <div class="sdg-header">
-              <img src="{{asset('assets/image/sustainable.png')}}" class="img-fluid" alt="">
-            </div>
-            <div class="sdg-content">
-              <h5>Kota dan Pemukiman yang Berkelanjutan</h5>
-              <p>
-                Meningkatkan kualitas hidup penduduk kota dengan menyediakan
-                akses yang lebih baik, termasuk yang terkait dengan
-                pengelolaan limbah yang ramah lingkungan
-              </p>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-4 mb-4">
-          <div class="sdg-card">
-            <div class="sdg-header">
-              <img src="{{asset('assets/image/responsible.png')}}" class="img-fluid" alt="">
-            </div>
-            <div class="sdg-content">
-              <h5>Konsumsi dan Produksi yang Bertanggung Jawab</h5>
-              <p>
-                Mendorong pola konsumsi dan produksi yang berkelanjutan untuk
-                mengurangi limbah serta mendorong praktik bisnis yang ramah
-                lingkungan
-              </p>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-4 mb-4">
-          <div class="sdg-card">
-            <div class="sdg-header">
-              <img src="{{asset('assets/image/life.png')}}" class="img-fluid" alt="">
-            </div>
-            <div class="sdg-content">
-              <h5>Ekosistem Lautan</h5>
-              <p>
-                Melestarikan dan memanfaatkan secara berkelanjutan lautan,
-                laut, dan sumber daya laut demi pembangunan yang berkelanjutan
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Information and Education Section -->
-  <section class="py-5" style="background: var(--light-gray)">
-    <div class="container">
-      <h2 class="section-title">Informasi dan Edukasi</h2>
-      <div class="row g-4 mb-4">
-        <div class="col-md-4">
-          <div class="info-card">
-            <h5>"Pengelolaan Sampah Terkini melalui Reduce, Reuse, Recycle (3R) di Bontang"</h5>
-            <div class="author-info">
-              <img src="{{asset('assets/image/woman.png')}}" alt="Writer" class="author-avatar">
-              <div class="author-details">
-                <h6>Ibu Siti</h6>
-                <p>IRT</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-4">
-          <div class="info-card">
-            <h5>"Peran Pemerintah Kota Bontang dalam Pengelolaan Sampah di TPA"</h5>
-            <div class="author-info">
-              <img src="{{asset('assets/image/man.png')}}" alt="Writer" class="author-avatar">
-              <div class="author-details">
-                <h6>Pak Handoko</h6>
-                <p>Karyawan Swasta</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-4">
-          <div class="info-card">
-            <h5>"Kisah Ibu Rahmawati dalam Mengelola Persampahan di Guntung"</h5>
-            <div class="author-info">
-              <img src="{{asset('assets/image/woman.png')}}" alt="Writer" class="author-avatar">
-              <div class="author-details">
-                <h6>Ibu Rahmawati</h6>
-                <p>IRT</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Footer -->
-  <footer class="footer" id="kontak">
-    <div class="container">
-      <div class="row align-items-center">
-        <div class="col-lg-6">
-          <div class="footer-brand">WRONGSHOCK INDONESIA</div>
-          <div class="social-icons">
-            <a href="#"><i class="fab fa-facebook"></i></a>
-            <a href="#"><i class="fab fa-instagram"></i></a>
-            <a href="#"><i class="fab fa-youtube"></i></a>
-          </div>
-        </div>
-        <div class="col-lg-6">
-          <div class="footer-buttons">
-            <div class="dropdown">
-              <button class="btn btn-login dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                aria-expanded="false">
-                Masuk
-              </button>
-              <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="{{ url('admin') }}">Masuk sebagai Admin</a></li>
-                <li><a class="dropdown-item" href="{{ url('user') }}">Masuk sebagai User</a></li>
-              </ul>
+            <div class="ws-public-nav-desktop">
+                <div class="ws-public-nav-links">
+                    <a href="#beranda">Beranda</a>
+                    <a href="#cara-kerja">Cara Kerja</a>
+                    <a href="#harga-sampah">Harga Sampah</a>
+                    <a href="#informasi">Informasi</a>
+                    <a href="#tentang">Tentang</a>
+                </div>
+                <div class="ws-public-nav-actions">
+                    @if ($memberDashboardUrl)
+                        <a href="{{ $memberDashboardUrl }}" class="ws-public-button ws-public-button-primary">Buka Beranda</a>
+                    @elseif (! auth()->check())
+                        <a href="{{ $loginUrl }}" class="ws-public-login-link">Masuk</a>
+                        @if ($registrationUrl)
+                            <a href="{{ $registrationUrl }}" class="ws-public-button ws-public-button-primary">Daftar Sekarang</a>
+                        @endif
+                    @endif
+                </div>
             </div>
 
-          </div>
+            <details class="ws-public-mobile-menu">
+                <summary aria-label="Buka menu navigasi"><span></span><span></span><span></span></summary>
+                <div class="ws-public-mobile-menu-panel">
+                    <a href="#beranda">Beranda</a>
+                    <a href="#cara-kerja">Cara Kerja</a>
+                    <a href="#harga-sampah">Harga Sampah</a>
+                    <a href="#informasi">Informasi</a>
+                    <a href="#tentang">Tentang</a>
+                    @if ($memberDashboardUrl)
+                        <a href="{{ $memberDashboardUrl }}" class="ws-public-mobile-primary">Buka Beranda</a>
+                    @elseif (! auth()->check())
+                        <a href="{{ $loginUrl }}">Masuk</a>
+                        @if ($registrationUrl)
+                            <a href="{{ $registrationUrl }}" class="ws-public-mobile-primary">Daftar Sekarang</a>
+                        @endif
+                    @endif
+                </div>
+            </details>
+        </nav>
+    </header>
+
+    <main id="main-content">
+        <section id="beranda" class="ws-public-hero">
+            <div class="ws-public-container ws-public-hero-grid">
+                <div class="ws-public-hero-copy">
+                    <span class="ws-public-eyebrow">Bersama untuk lingkungan lebih baik</span>
+                    <h1>Ubah Sampah<br>Jadi <span>Lebih Bernilai</span></h1>
+                    <p>Kelola sampah dengan lebih mudah dan jadikan setiap setoran sebagai langkah kecil menuju lingkungan yang lebih bersih.</p>
+                    <div class="ws-public-hero-actions">
+                        @if ($memberDashboardUrl)
+                            <a href="{{ $memberDashboardUrl }}" class="ws-public-button ws-public-button-primary">Buka Beranda</a>
+                        @elseif ($registrationUrl && ! auth()->check())
+                            <a href="{{ $registrationUrl }}" class="ws-public-button ws-public-button-primary">Mulai Sekarang</a>
+                        @endif
+                        <a href="#harga-sampah" class="ws-public-button ws-public-button-secondary">Lihat Harga Sampah</a>
+                        @if (! auth()->check())
+                            <a href="{{ $loginUrl }}" class="ws-public-text-link">Sudah menjadi anggota? Masuk</a>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="ws-public-hero-visual">
+                    <span class="ws-public-sun" aria-hidden="true"></span>
+                    <span class="ws-public-cloud ws-public-cloud-one" aria-hidden="true"></span>
+                    <span class="ws-public-cloud ws-public-cloud-two" aria-hidden="true"></span>
+                    <img src="{{ asset('images/wrongshock/eco-community.svg') }}" alt="Ilustrasi bumi, pepohonan, dan simbol daur ulang Wrongshock">
+                    <span class="ws-public-leaf ws-public-leaf-one" aria-hidden="true"></span>
+                    <span class="ws-public-leaf ws-public-leaf-two" aria-hidden="true"></span>
+                </div>
+            </div>
+        </section>
+
+        <section class="ws-public-values" aria-labelledby="values-title">
+            <div class="ws-public-container">
+                <h2 id="values-title" class="ws-public-visually-hidden">Manfaat Wrongshock</h2>
+                <div class="ws-public-value-grid">
+                    <article class="ws-public-value-card">
+                        <span class="ws-public-icon ws-public-icon-mint" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M8 6h11M8 12h11M8 18h7M4 6h.01M4 12h.01M4 18h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+                        <div><h3>Mudah Digunakan</h3><p>Pantau saldo dan riwayat setoran dalam satu tempat.</p></div>
+                    </article>
+                    <article class="ws-public-value-card">
+                        <span class="ws-public-icon ws-public-icon-yellow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M7 3v4m10-4v4M6 11h4v4H6zM4 5h16v16H4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span>
+                        <div><h3>Transparan</h3><p>Nilai setoran dicatat berdasarkan jenis, jumlah, dan harga sampah.</p></div>
+                    </article>
+                    <article class="ws-public-value-card">
+                        <span class="ws-public-icon ws-public-icon-sky" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 21V10m0 5c-4 0-7-2.5-7-6 4 0 7 2 7 6Zm0-3c0-4 2.5-7 6-7 0 4-2 7-6 7Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                        <div><h3>Ramah Lingkungan</h3><p>Bangun kebiasaan memilah dan menyetorkan sampah dengan lebih teratur.</p></div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section id="cara-kerja" class="ws-public-section ws-public-how">
+            <div class="ws-public-container">
+                <div class="ws-public-section-heading ws-public-section-heading-centered">
+                    <span class="ws-public-eyebrow">Alur yang sederhana</span>
+                    <h2>Cara Kerja Wrongshock</h2>
+                    <p>Dari sampah yang sudah dipilah hingga nilai setoran masuk ke saldo anggota.</p>
+                </div>
+                <ol class="ws-public-step-grid">
+                    <li class="ws-public-step-card ws-public-step-mint">
+                        <span class="ws-public-step-number">01</span><span class="ws-public-step-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M6 7h12l-1 14H7L6 7Zm3 0V4h6v3M4 7h16" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span>
+                        <h3>Pilah Sampah</h3><p>Pisahkan sampah berdasarkan jenisnya.</p>
+                    </li>
+                    <li class="ws-public-step-card ws-public-step-yellow">
+                        <span class="ws-public-step-number">02</span><span class="ws-public-step-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 17h16M6 17V8l6-4 6 4v9M9 17v-5h6v5" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span>
+                        <h3>Bawa dan Setorkan</h3><p>Bawa sampah ke pengelola bank sampah.</p>
+                    </li>
+                    <li class="ws-public-step-card ws-public-step-sky">
+                        <span class="ws-public-step-number">03</span><span class="ws-public-step-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M5 20h14M7 20l2-9h6l2 9M9 11l3-7 3 7M8 15h8" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span>
+                        <h3>Ditimbang dan Dicatat</h3><p>Petugas menimbang dan mencatat setoran.</p>
+                    </li>
+                    <li class="ws-public-step-card ws-public-step-green">
+                        <span class="ws-public-step-number">04</span><span class="ws-public-step-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16v12H4zM4 10h16m-4 4h2" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span>
+                        <h3>Saldo Bertambah</h3><p>Nilai setoran masuk ke saldo anggota setelah transaksi berhasil.</p>
+                    </li>
+                </ol>
+            </div>
+        </section>
+
+        <section id="harga-sampah" class="ws-public-section ws-public-prices">
+            <div class="ws-public-container">
+                <div class="ws-public-section-heading ws-public-price-heading">
+                    <div><span class="ws-public-eyebrow">Informasi master Wrongshock</span><h2>Harga Sampah Terbaru</h2><p>Cek harga berdasarkan data yang tersedia di Wrongshock.</p></div>
+                    <span class="ws-public-price-note">Harga dapat berubah sesuai pembaruan dari pengelola.</span>
+                </div>
+
+                @if ($wasteItems->isEmpty())
+                    <div class="ws-public-empty-state">
+                        <span class="ws-public-icon ws-public-icon-mint" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16v12H4zM8 7V4h8v3M9 12h6" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span>
+                        <h3>Informasi harga sampah belum tersedia.</h3>
+                        <p>Silakan periksa kembali setelah pengelola memperbarui data harga.</p>
+                    </div>
+                @else
+                    <div class="ws-public-price-grid">
+                        @foreach ($wasteItems as $item)
+                            <article class="ws-public-price-card">
+                                <div class="ws-public-price-card-top">
+                                    <span class="ws-public-price-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m12 3 3 5h-3c3 1 5 4 4 7M18 18h-6l2-3c-3 1-6-1-7-4M6 8l3-5 3 5H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                                    <span class="ws-public-output">{{ $item->output }}</span>
+                                </div>
+                                <h3>{{ $item->category }}</h3>
+                                <div class="ws-public-price-value"><strong>Rp{{ number_format($item->price, 0, ',', '.') }}</strong><span>per {{ $item->unit }}</span></div>
+                            </article>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+        </section>
+
+        <section id="informasi" class="ws-public-section ws-public-education">
+            <div class="ws-public-container ws-public-education-grid">
+                <div class="ws-public-education-visual">
+                    <span class="ws-public-education-badge">Siap disetorkan</span>
+                    <img src="{{ asset('images/wrongshock/eco-community.svg') }}" alt="" aria-hidden="true">
+                    <span class="ws-public-education-ring" aria-hidden="true"></span>
+                </div>
+                <div>
+                    <div class="ws-public-section-heading">
+                        <span class="ws-public-eyebrow">Informasi sederhana</span>
+                        <h2>Sampah Bersih,<br>Nilainya Lebih Baik</h2>
+                        <p>Persiapkan sampah sebelum dibawa agar lebih mudah dipilah dan dicatat oleh pengelola.</p>
+                    </div>
+                    <ul class="ws-public-tip-list">
+                        <li><span aria-hidden="true">✓</span>Pisahkan sampah berdasarkan jenis.</li>
+                        <li><span aria-hidden="true">✓</span>Kosongkan isi botol atau wadah sebelum disetor.</li>
+                        <li><span aria-hidden="true">✓</span>Jaga sampah kertas tetap kering.</li>
+                        <li><span aria-hidden="true">✓</span>Pisahkan material yang berbeda jika memungkinkan.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="tentang" class="ws-public-section ws-public-why">
+            <div class="ws-public-container">
+                <div class="ws-public-section-heading ws-public-section-heading-centered">
+                    <span class="ws-public-eyebrow">Pencatatan yang lebih jelas</span><h2>Kenapa Wrongshock?</h2>
+                    <p>Wrongshock membantu pengelolaan bank sampah dan informasi anggota menjadi lebih terorganisir.</p>
+                </div>
+                <div class="ws-public-reason-grid">
+                    <article><span>01</span><h3>Transaksi Tercatat</h3><p>Setoran tersimpan sebagai riwayat anggota.</p></article>
+                    <article><span>02</span><h3>Saldo Mudah Dipantau</h3><p>Anggota dapat melihat saldo melalui akun mereka.</p></article>
+                    <article><span>03</span><h3>Harga Lebih Transparan</h3><p>Informasi jenis dan harga sampah tersedia dengan jelas.</p></article>
+                    <article><span>04</span><h3>Riwayat Terorganisir</h3><p>Setoran dapat dilihat kembali secara digital.</p></article>
+                </div>
+            </div>
+        </section>
+
+        <section class="ws-public-cta-section">
+            <div class="ws-public-container">
+                <div class="ws-public-cta-card">
+                    <div>
+                        <span class="ws-public-eyebrow">Mulai dari sekarang</span>
+                        <h2>Langkah Kecil untuk<br>Lingkungan yang Lebih Baik</h2>
+                        <p>Gunakan Wrongshock untuk melihat informasi sampah dan mencatat perjalanan setoran secara lebih terorganisir.</p>
+                        <div class="ws-public-cta-actions">
+                            @if ($memberDashboardUrl)
+                                <a href="{{ $memberDashboardUrl }}" class="ws-public-button ws-public-button-light">Buka Beranda</a>
+                            @elseif (! auth()->check())
+                                @if ($registrationUrl)<a href="{{ $registrationUrl }}" class="ws-public-button ws-public-button-light">Daftar Sekarang</a>@endif
+                                <a href="{{ $loginUrl }}" class="ws-public-button ws-public-button-outline-light">Masuk</a>
+                            @else
+                                <a href="#harga-sampah" class="ws-public-button ws-public-button-light">Lihat Harga Sampah</a>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="ws-public-cta-visual" aria-hidden="true">
+                        <svg viewBox="0 0 220 180" fill="none"><circle cx="110" cy="88" r="58" fill="#62B9D4"/><path d="M70 61c14-18 35-26 56-21l9 13-7 14-18 3-8 14-18-3-16-10 2-10Zm4 45 18-11 19 7 8 20-12 13-3 17-18-8-12-21v-17Zm62-17 17 3 11 17-8 22-17 15-11-6 2-18-10-12 16-21Z" fill="#48A56D"/><path d="M67 90c-19-7-29-18-32-34m118 34c19-7 29-18 32-34" stroke="#DDF4E7" stroke-width="8" stroke-linecap="round"/><path d="M105 109c8 7 16 7 24 0" stroke="#134E3A" stroke-width="4" stroke-linecap="round"/><circle cx="98" cy="91" r="4" fill="#134E3A"/><circle cx="132" cy="91" r="4" fill="#134E3A"/><path d="M29 153c31-24 60-13 84-1 30 15 54-5 78-10 12-3 21 0 29 5v33H0v-9c8-3 18-9 29-18Z" fill="#8FD1AA"/></svg>
+                    </div>
+                    <span class="ws-public-cta-leaf ws-public-cta-leaf-one" aria-hidden="true"></span><span class="ws-public-cta-leaf ws-public-cta-leaf-two" aria-hidden="true"></span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="ws-public-footer">
+        <div class="ws-public-container ws-public-footer-grid">
+            <div>
+                <a href="#beranda" class="ws-public-brand ws-public-brand-footer">
+                    <span class="ws-public-brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16 27C9.4 27 5 22.4 5 16.3 5 9.2 10.7 5 17.2 5c4.2 0 7.7 2.1 9.8 5.4-3.1-.7-6.5.1-8.9 2.3-2.8 2.6-3.6 6.5-2.5 9.9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M15.7 22.6c1.7-5 5-8.8 10.2-11.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span>
+                    <span><strong>Wrongshock</strong><small>Bank Sampah Digital</small></span>
+                </a>
+                <p>Platform digital untuk membantu pengelolaan bank sampah dan pencatatan setoran anggota secara lebih terorganisir.</p>
+            </div>
+            <div class="ws-public-footer-links"><h2>Navigasi</h2><a href="#beranda">Beranda</a><a href="#cara-kerja">Cara Kerja</a><a href="#harga-sampah">Harga Sampah</a><a href="#informasi">Informasi</a></div>
+            <div class="ws-public-footer-links">
+                <h2>Akun Anggota</h2>
+                @if ($memberDashboardUrl)
+                    <a href="{{ $memberDashboardUrl }}">Buka Beranda</a>
+                @elseif (! auth()->check())
+                    <a href="{{ $loginUrl }}">Masuk</a>
+                    @if ($registrationUrl)<a href="{{ $registrationUrl }}">Daftar Sekarang</a>@endif
+                @else
+                    <a href="#harga-sampah">Lihat Harga Sampah</a>
+                @endif
+            </div>
         </div>
-      </div>
-    </div>
-  </footer>
+        <div class="ws-public-container ws-public-footer-bottom"><span>&copy; {{ now()->year }} Wrongshock</span><span>Bersama untuk lingkungan lebih baik.</span></div>
+    </footer>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-  <script>
-    // Smooth scrolling for navigation links
-      document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
-        anchor.addEventListener("click", function (e) {
-          e.preventDefault();
-          const target = document.querySelector(this.getAttribute("href"));
-          if (target) {
-            target.scrollIntoView({
-              behavior: "smooth",
-              block: "start",
-            });
-          }
-        });
-      });
-
-      // Add scroll effect to navbar
-      window.addEventListener("scroll", function () {
-        const navbar = document.querySelector(".navbar");
-        if (window.scrollY > 50) {
-          navbar.style.background = "rgba(255, 255, 255, 0.95)";
-          navbar.style.backdropFilter = "blur(10px)";
-        } else {
-          navbar.style.background = "white";
-          navbar.style.backdropFilter = "none";
-        }
-      });
-
-      // Add animation to cards on scroll
-      const observerOptions = {
-        threshold: 0.1,
-        rootMargin: "0px 0px -50px 0px",
-      };
-
-      const observer = new IntersectionObserver(function (entries) {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.style.opacity = "1";
-            entry.target.style.transform = "translateY(0)";
-          }
-        });
-      }, observerOptions);
-
-      // Apply animation to cards
-      document.querySelectorAll(".card").forEach((card) => {
-        card.style.opacity = "0";
-        card.style.transform = "translateY(20px)";
-        card.style.transition = "opacity 0.6s ease, transform 0.6s ease";
-        observer.observe(card);
-      });
-  </script>
+    <script>
+        document.querySelectorAll('.ws-public-mobile-menu a').forEach((link) => {
+            link.addEventListener('click', () => link.closest('details').removeAttribute('open'))
+        })
+    </script>
 </body>
-
 </html>

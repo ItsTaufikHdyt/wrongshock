@@ -1,216 +1,211 @@
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WRONGSHOCK INDONESIA - Registrasi</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
-    <style>
-        body {
-            background: linear-gradient(135deg,  #b5c267, #20c997);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: "Poppins", sans-serif;
-        }
-
-        .card {
-            border-radius: 20px;
-            overflow: hidden;
-        }
-
-        .card-header {
-            background: #fff;
-            border-bottom: none;
-            text-align: center;
-            padding: 2rem 1rem 1rem;
-        }
-
-        .card-header i {
-            font-size: 3rem;
-            color: #28a745;
-        }
-
-        .form-control {
-            border-radius: 10px;
-        }
-
-        .btn-success {
-            border-radius: 10px;
-            padding: 0.75rem;
-            font-weight: 600;
-            transition: 0.3s;
-        }
-
-        .btn-success:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
-        }
-
-        .text-link {
-            color: #20c997;
-            font-weight: 500;
-            text-decoration: none;
-        }
-
-        .text-link:hover {
-            text-decoration: underline;
-        }
-
-        input.is-valid {
-            border-color: #28a745 !important;
-        }
-
-        input.is-invalid {
-            border-color: #dc3545 !important;
-        }
-    </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Daftar sebagai anggota Wrongshock untuk memantau saldo, riwayat setoran, dan informasi harga sampah.">
+    <meta name="theme-color" content="#176B4A">
+    <title>Daftar Anggota — Wrongshock</title>
+    <link rel="stylesheet" href="{{ asset('css/public-register.css') }}">
 </head>
+<body class="ws-register-page">
+    <a href="#register-form" class="ws-register-skip-link">Lewati ke formulir pendaftaran</a>
 
-<body>
-    <div class="container">
-        @if (session('success'))
-        <div class="alert alert-success alert-dismissible fade show shadow-sm rounded-3 border-0 mt-3 px-4 py-3 d-flex align-items-center"
-            role="alert" style="background: linear-gradient(135deg, #b5c267, #ffe27c); color: #fff;">
-            <i class="fa-solid fa-circle-check me-3 fs-4"></i>
-            <div class="flex-grow-1">
-                <strong>Berhasil!</strong> {{ session('success') }}
+    <main class="ws-register-shell">
+        <section class="ws-register-hero" aria-labelledby="register-hero-title">
+            <a href="{{ route('home') }}" class="ws-register-brand" aria-label="Kembali ke Beranda Wrongshock">
+                <span class="ws-register-brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 32 32" fill="none">
+                        <path d="M16 27C9.4 27 5 22.4 5 16.3 5 9.2 10.7 5 17.2 5c4.2 0 7.7 2.1 9.8 5.4-3.1-.7-6.5.1-8.9 2.3-2.8 2.6-3.6 6.5-2.5 9.9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+                        <path d="M15.7 22.6c1.7-5 5-8.8 10.2-11.5M10.4 17.9c1.5.2 3 .7 4.3 1.6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+                    </svg>
+                </span>
+                <span><strong>Wrongshock</strong><small>Bank Sampah Digital</small></span>
+            </a>
+
+            <div class="ws-register-hero-copy">
+                <span class="ws-register-eyebrow">Gabung bersama komunitas</span>
+                <h1 id="register-hero-title">Mulai dari Sampah,<br><span>Buat Perubahan.</span></h1>
+                <p>Bergabung bersama Wrongshock dan kelola setoran sampahmu dengan lebih mudah.</p>
             </div>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        @endif
 
-        <div class="row justify-content-center">
-            <div class="col-md-6 col-lg-5">
-                <div class="card shadow-lg">
-                    <div class="card-header">
-                        <i class="fa-solid fa-recycle"></i>
-                        <h3 class="mt-3 fw-bold">Registrasi Akun</h3>
-                        <p class="text-muted mb-0">Bergabung dengan platform pengelolaan sampah digital</p>
+            <div class="ws-register-illustration">
+                <span class="ws-register-sun" aria-hidden="true"></span>
+                <img src="{{ asset('images/wrongshock/eco-community.svg') }}" alt="Ilustrasi bumi, pepohonan, dan simbol daur ulang Wrongshock">
+                <span class="ws-register-leaf ws-register-leaf-one" aria-hidden="true"></span>
+                <span class="ws-register-leaf ws-register-leaf-two" aria-hidden="true"></span>
+            </div>
+
+            <div class="ws-register-benefits" aria-label="Manfaat akun anggota">
+                <span><b aria-hidden="true">✓</b> Pantau saldo</span>
+                <span><b aria-hidden="true">✓</b> Lihat riwayat setoran</span>
+                <span><b aria-hidden="true">✓</b> Informasi harga sampah</span>
+            </div>
+        </section>
+
+        <section class="ws-register-form-panel" aria-labelledby="register-title">
+            <div class="ws-register-card">
+                <a href="{{ route('home') }}" class="ws-register-back-link">&larr; Kembali ke Beranda</a>
+
+                @if (session('success'))
+                    <div class="ws-register-success" role="status" tabindex="-1">
+                        <span aria-hidden="true">✓</span>
+                        <div><strong>Pendaftaran berhasil.</strong><p>Akun Anda menunggu aktivasi dari pengelola sebelum dapat digunakan.</p></div>
                     </div>
-                    <div class="card-body px-4 py-4">
-                        <form action="{{ route('user.register') }}" method="POST">
-                            @csrf
-                            <div class="mb-3">
-                                <label for="name" class="form-label">Nama Lengkap</label>
-                                <input type="text" class="form-control" id="name" name="name"
-                                    placeholder="Masukkan nama lengkap" required>
-                            </div>
+                @endif
 
-                            <div class="mb-3">
-                                <label for="email" class="form-label">Alamat Email</label>
-                                <input type="email" class="form-control" id="email" name="email"
-                                    placeholder="Masukkan email" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="address" class="form-label">Jalan</label>
-                                <input type="text" class="form-control" id="address" name="address"
-                                    placeholder="Masukkan Alamat" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="district" class="form-label">Kecamatan</label>
-                                <select class="form-control" name="district" id="district" required>
-                                    <option value="">-- Pilih Kecamatan --</option>
-                                </select>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="sub_district" class="form-label">Kelurahan</label>
-                                <select class="form-control" name="sub_district" id="sub_district" required>
-                                    <option value="">-- Pilih Kelurahan --</option>
-                                </select>
-                            </div>
-                            <div class="mb-3 position-relative">
-                                <label for="password" class="form-label">Kata Sandi</label>
-                                <input type="password" class="form-control" id="password" name="password"
-                                    placeholder="Masukkan kata sandi" required>
-                                <i class="fa-solid fa-eye position-absolute top-50 end-0 translate-middle-y me-3"
-                                    id="togglePassword" style="cursor: pointer;"></i>
-                            </div>
-
-                            <div class="mb-3 position-relative">
-                                <label for="password_confirmation" class="form-label">Konfirmasi Kata Sandi</label>
-                                <input type="password" class="form-control" id="password_confirmation"
-                                    name="password_confirmation" placeholder="Ulangi kata sandi" required>
-                                <i class="fa-solid fa-eye position-absolute top-50 end-0 translate-middle-y me-3"
-                                    id="toggleConfirmationPassword" style="cursor: pointer;"></i>
-                            </div>
-
-                            <button type="submit" class="btn btn-success w-100">
-                                <i class="fa-solid fa-user-plus me-2"></i> Daftar
-                            </button>
-                        </form>
-
-                        <div class="text-center mt-3">
-                            <small>Sudah punya akun? <a href="{{ url('/') }}" class="text-link">Login di
-                                    sini</a></small>
-                        </div>
+                @if ($errors->any())
+                    <div class="ws-register-error-summary" role="alert" tabindex="-1">
+                        <strong>Periksa kembali beberapa data berikut.</strong>
+                        <span>{{ $errors->count() }} bagian perlu diperbaiki.</span>
                     </div>
+                @endif
+
+                <div class="ws-register-heading">
+                    <span class="ws-register-context">Gabung Wrongshock</span>
+                    <h2 id="register-title">Buat Akun Anggota</h2>
+                    <p>Lengkapi data berikut untuk mendaftar sebagai anggota.</p>
                 </div>
+
+                <form id="register-form" action="{{ route('user.register') }}" method="POST" novalidate>
+                    @csrf
+
+                    <fieldset class="ws-register-group">
+                        <legend>Informasi Pribadi</legend>
+                        <div class="ws-register-field-grid">
+                            <div class="ws-register-field ws-register-field-full">
+                                <label for="name">Nama Lengkap <span aria-hidden="true">*</span></label>
+                                <input id="name" name="name" type="text" value="{{ old('name') }}" autocomplete="name" placeholder="Nama lengkap Anda" required aria-invalid="{{ $errors->has('name') ? 'true' : 'false' }}" aria-describedby="name-error">
+                                @error('name')<p id="name-error" class="ws-register-field-error">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="ws-register-field ws-register-field-full">
+                                <label for="email">Email <span aria-hidden="true">*</span></label>
+                                <input id="email" name="email" type="email" value="{{ old('email') }}" autocomplete="email" placeholder="nama@email.com" required aria-invalid="{{ $errors->has('email') ? 'true' : 'false' }}" aria-describedby="email-error">
+                                @error('email')<p id="email-error" class="ws-register-field-error">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="ws-register-group">
+                        <legend>Lokasi</legend>
+                        <div class="ws-register-field-grid">
+                            <div class="ws-register-field">
+                                <label for="district">Kecamatan <span aria-hidden="true">*</span></label>
+                                <select id="district" name="district" required data-old-value="{{ old('district') }}" aria-invalid="{{ $errors->has('district') ? 'true' : 'false' }}" aria-describedby="district-help district-error">
+                                    <option value="">Memuat kecamatan...</option>
+                                </select>
+                                <p id="district-help" class="ws-register-field-help">Pilih kecamatan terlebih dahulu.</p>
+                                @error('district')<p id="district-error" class="ws-register-field-error">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="ws-register-field">
+                                <label for="sub_district">Kelurahan <span aria-hidden="true">*</span></label>
+                                <select id="sub_district" name="sub_district" required data-old-value="{{ old('sub_district') }}" disabled aria-invalid="{{ $errors->has('sub_district') ? 'true' : 'false' }}" aria-describedby="sub-district-help sub-district-error">
+                                    <option value="">Pilih kecamatan terlebih dahulu</option>
+                                </select>
+                                <p id="sub-district-help" class="ws-register-field-help" aria-live="polite">Pilih kecamatan terlebih dahulu.</p>
+                                @error('sub_district')<p id="sub-district-error" class="ws-register-field-error">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="ws-register-field ws-register-field-full">
+                                <label for="address">Alamat Lengkap <span aria-hidden="true">*</span></label>
+                                <textarea id="address" name="address" rows="3" autocomplete="street-address" placeholder="Alamat tempat tinggal" required aria-invalid="{{ $errors->has('address') ? 'true' : 'false' }}" aria-describedby="address-error">{{ old('address') }}</textarea>
+                                @error('address')<p id="address-error" class="ws-register-field-error">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="ws-register-group">
+                        <legend>Keamanan Akun</legend>
+                        <div class="ws-register-field-grid">
+                            <div class="ws-register-field">
+                                <label for="password">Password <span aria-hidden="true">*</span></label>
+                                <div class="ws-register-password-wrap">
+                                    <input id="password" name="password" type="password" autocomplete="new-password" required aria-invalid="{{ $errors->has('password') ? 'true' : 'false' }}" aria-describedby="password-help password-error">
+                                    <button type="button" class="ws-register-password-toggle" data-password-target="password" aria-label="Tampilkan password" aria-pressed="false">Lihat</button>
+                                </div>
+                                <p id="password-help" class="ws-register-field-help">Gunakan minimal 8 karakter.</p>
+                                @error('password')<p id="password-error" class="ws-register-field-error">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="ws-register-field">
+                                <label for="password_confirmation">Konfirmasi Password <span aria-hidden="true">*</span></label>
+                                <div class="ws-register-password-wrap">
+                                    <input id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" required aria-invalid="{{ $errors->has('password_confirmation') ? 'true' : 'false' }}" aria-describedby="password-confirmation-error">
+                                    <button type="button" class="ws-register-password-toggle" data-password-target="password_confirmation" aria-label="Tampilkan password" aria-pressed="false">Lihat</button>
+                                </div>
+                                @error('password_confirmation')<p id="password-confirmation-error" class="ws-register-field-error">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <button type="submit" class="ws-register-submit">Daftar Sekarang</button>
+                </form>
+
+                <p class="ws-register-login-prompt">Sudah punya akun? <a href="{{ url('/user/login') }}">Masuk</a></p>
             </div>
-        </div>
-    </div>
+        </section>
+    </main>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script>
-        $(document).ready(function () {
-        // Load daftar kecamatan
-        $.get("{{ url('/api/districts') }}", function (data) {
-            $.each(data, function (id, name) {
-                $('#district').append(new Option(name, id));
-            });
-        });
+        const district = document.querySelector('#district');
+        const subDistrict = document.querySelector('#sub_district');
+        const subDistrictHelp = document.querySelector('#sub-district-help');
 
-        // Saat kecamatan dipilih, load kelurahan sesuai kecamatan
-        $('#district').on('change', function () {
-            let districtId = $(this).val();
-            $('#sub_district').empty().append(new Option("-- Pilih Kelurahan --", ""));
+        const setOptions = (select, options, placeholder) => {
+            select.replaceChildren(new Option(placeholder, ''));
+            Object.entries(options).forEach(([id, name]) => select.append(new Option(name, id)));
+        };
 
-            if (districtId) {
-                $.get("{{ url('/api/subdistricts') }}?district_id=" + districtId, function (data) {
-                    $.each(data, function (id, name) {
-                        $('#sub_district').append(new Option(name, id));
-                        });
-                    });
+        const loadSubDistricts = async (districtId, selected = '') => {
+            subDistrict.disabled = true;
+            subDistrictHelp.textContent = districtId ? 'Memuat kelurahan...' : 'Pilih kecamatan terlebih dahulu.';
+            setOptions(subDistrict, {}, districtId ? 'Memuat kelurahan...' : 'Pilih kecamatan terlebih dahulu');
+
+            if (!districtId) return;
+
+            try {
+                const response = await fetch(`{{ url('/api/subdistricts') }}?district_id=${encodeURIComponent(districtId)}`, { headers: { Accept: 'application/json' } });
+                if (!response.ok) throw new Error('location request failed');
+                const options = await response.json();
+                setOptions(subDistrict, options, 'Pilih kelurahan');
+                if (selected && options[selected]) subDistrict.value = selected;
+                subDistrict.disabled = false;
+                subDistrictHelp.textContent = 'Pilih kelurahan sesuai alamat Anda.';
+            } catch {
+                setOptions(subDistrict, {}, 'Kelurahan belum dapat dimuat');
+                subDistrictHelp.textContent = 'Kelurahan belum dapat dimuat. Coba lagi nanti.';
+            }
+        };
+
+        const loadDistricts = async () => {
+            try {
+                const response = await fetch('{{ url('/api/districts') }}', { headers: { Accept: 'application/json' } });
+                if (!response.ok) throw new Error('district request failed');
+                const options = await response.json();
+                setOptions(district, options, 'Pilih kecamatan');
+                const selected = district.dataset.oldValue;
+                if (selected && options[selected]) {
+                    district.value = selected;
+                    await loadSubDistricts(selected, subDistrict.dataset.oldValue);
                 }
+            } catch {
+                setOptions(district, {}, 'Kecamatan belum dapat dimuat');
+                district.setAttribute('aria-describedby', 'district-help district-error');
+                document.querySelector('#district-help').textContent = 'Kecamatan belum dapat dimuat. Coba lagi nanti.';
+            }
+        };
+
+        district.addEventListener('change', () => loadSubDistricts(district.value));
+        loadDistricts();
+
+        document.querySelectorAll('.ws-register-password-toggle').forEach((button) => {
+            button.addEventListener('click', () => {
+                const input = document.getElementById(button.dataset.passwordTarget);
+                const visible = input.type === 'text';
+                input.type = visible ? 'password' : 'text';
+                button.textContent = visible ? 'Lihat' : 'Sembunyikan';
+                button.setAttribute('aria-label', visible ? 'Tampilkan password' : 'Sembunyikan password');
+                button.setAttribute('aria-pressed', String(!visible));
             });
         });
-        // Toggle password visibility
-        const togglePassword = document.querySelector("#togglePassword");
-        const password = document.querySelector("#password");
-        togglePassword.addEventListener("click", function () {
-            const type = password.getAttribute("type") === "password" ? "text" : "password";
-            password.setAttribute("type", type);
-            this.classList.toggle("fa-eye-slash");
-        });
-        const toggleConfirmationPassword = document.querySelector("#toggleConfirmationPassword");
-        const password2 = document.querySelector("#password_confirmation");
-        toggleConfirmationPassword.addEventListener("click", function () {
-            const type = password2.getAttribute("type") === "password" ? "text" : "password";
-            password2.setAttribute("type", type);
-            this.classList.toggle("fa-eye-slash");
-        });
-
-            document.addEventListener("DOMContentLoaded", function () {
-                const password = document.getElementById("password");
-                const confirmPassword = document.getElementById("password_confirmation");
-
-                confirmPassword.addEventListener("input", function () {
-                if (password.value !== confirmPassword.value) {
-                    confirmPassword.classList.add("is-invalid");
-                    confirmPassword.classList.remove("is-valid");
-                } else {
-                    confirmPassword.classList.add("is-valid");
-                    confirmPassword.classList.remove("is-invalid");
-                }
-            });
-            });
-
     </script>
 </body>
-
 </html>

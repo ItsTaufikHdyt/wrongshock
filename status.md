@@ -2,7 +2,7 @@
 
 ## Overall
 
-**Current status: P1.7.1 COMPLETE / P1.8 NOT STARTED / M8 COMPLETE**
+**Current status: P1.7.3 COMPLETE / P1.8 NOT STARTED / M8 COMPLETE**
 
 This document tracks implementation against `prd.md`. It must be updated
 after every meaningful coding session.
@@ -304,6 +304,39 @@ targets, generic errors, loading behavior, and mobile layouts remain backed by
 Filament's existing form and authentication behavior. Auth CSS loads only on
 login pages. P1.8 Final User UI QA has not started.
 
+### P1.7.2 --- Public Homepage Redesign
+
+Status: COMPLETE. Replaced the default public homepage with a responsive,
+read-only Wrongshock landing page for visitors and members. It includes a
+public navbar, truthful hero, value propositions, current master-price cards,
+actual deposit workflow, safe waste-preparation guidance, product benefits,
+member CTA, and factual footer. No impact counters, testimonials, partners,
+social links, contact details, or unsupported features are advertised.
+
+The homepage reads at most eight `waste_items` rows using the authoritative
+`category`, `output`, `unit`, and `price` fields, ordered by category and id.
+Missing or empty master data renders a friendly empty state. No member,
+balance, address, email, ledger, or transaction data is queried for the public
+page. Authenticated users receive only a safe member CTA; admin access is not
+made a public primary destination. P1.8 Final User UI QA remains NOT STARTED.
+
+### P1.7.3 --- Public Registration UI Redesign
+
+Status: COMPLETE. Replaced the generic Bootstrap/jQuery registration page with
+a responsive Wrongshock onboarding screen that shares the public homepage and
+user-login visual system. The one-page form is grouped into personal data,
+location, and account security, with a cheerful local eco illustration, truthful
+member benefits, accessible password visibility controls, field-level errors,
+safe old-input behavior, and clear inactive-account activation messaging.
+
+Registration semantics remain unchanged: `POST /storeRegister` is throttled at
+6 requests per minute, CSRF remains required, passwords are hashed, users are
+created with the `user` role, status `0`, balance `0`, and a generated member
+number. District/subdistrict pairing is still validated server-side. The public
+location endpoints return only id/name maps and the dependent select now has
+loading, disabled, and failure states. P1.8 Final User UI QA remains NOT
+STARTED.
+
 ## Critical Rules During Implementation
 
 -   Never "fix" historical financial data by deleting records.
@@ -341,6 +374,76 @@ login pages. P1.8 Final User UI QA has not started.
 ## Session Log
 
 Add entries in reverse chronological order.
+
+### 2026-09-22 — P1.7.3 Public Registration UI Redesign
+
+- Audited registration architecture before editing: public `GET /register`,
+  `POST /storeRegister` through `RegisterController::register`, async district
+  and subdistrict maps, server validation, generated Bontang member number,
+  user role assignment, inactive status, zero balance, hashed password,
+  redirect back to `/register`, CSRF, and `throttle:6,1`.
+- Replaced the Bootstrap/Font Awesome/jQuery view with a split desktop layout
+  and compact mobile layout using the same Wrongshock brand, palette, radius,
+  focus ring, and approved local `eco-community.svg` illustration as homepage
+  and authentication. No multi-step wizard or new registration architecture
+  was introduced.
+- Grouped fields into Informasi Pribadi, Lokasi, and Keamanan Akun. Added
+  explicit Indonesian labels, `name`/`email`/`street-address`/`new-password`
+  autocomplete, accessible password toggles, semantic required inputs, visible
+  errors, top-level error summary, safe old-input retention, and no password
+  repopulation.
+- Replaced jQuery location loading with native fetch while preserving the
+  existing public endpoints. District changes disable and reload Kelurahan;
+  loading and request failure states are readable and non-technical.
+- Corrected success copy to state that the new account waits for manager
+  activation. Homepage and user-login registration links now point to the real
+  named `/register` route; registration links back to `/` and `/user/login`.
+- Added seven focused registration tests covering rendering, successful hashed
+  inactive member creation, duplicate/required/region validation, safe old
+  input, protected fields, CSRF, public location privacy, and throttling.
+- Full regression passed with 122 tests and 668 assertions, 0 failures, and 0
+  skipped. Blade compilation, Pint, and `git diff --check` passed. Composer
+  audit reports 0 advisories.
+- Financial baseline remained unchanged at 2 users, cached and ledger net
+  2,017,800, 5 ledger entries including 2 opening balances, 2 deposits, 4
+  deposit items, and 0 withdrawals; reconciliation remained 2 MATCH and 0
+  MISMATCH. Authenticated user UI and admin UI were not redesigned.
+- Browser verification at 1440px, 390px, and 320px is NOT VERIFIED because
+  browser tooling is unavailable. Source responsive checks and HTTP rendering
+  tests pass. P1.8 remains NOT STARTED.
+
+### 2026-09-22 — P1.7.2 Public Homepage Redesign
+
+- Audited the previous homepage: it was a Bootstrap/CDN-based Laravel starter
+  composition with an oversized photo hero, dummy WhatsApp/social links,
+  unverified author/testimonial-like cards, an admin login dropdown, and no
+  authoritative public price information. Those claims and obsolete landing
+  assets were removed.
+- Rebuilt `/` as a public Wrongshock page with a sticky responsive navbar,
+  hero and local approved eco illustration, three truthful value cards, four
+  actual operational steps, current waste-price cards, practical preparation
+  tips, product-benefit explanation, CTA, and factual footer.
+- Added native `<details>` mobile navigation with keyboard/focus support and a
+  small close-on-link script. No frontend dependency, remote image, base64
+  content, carousel, or heavy animation was added.
+- Public prices are read-only and limited to eight deterministic rows. The
+  route checks for a missing `waste_items` table so tests and empty deployments
+  receive the same safe empty state instead of a server error.
+- Added SEO title/description/theme metadata, skip navigation, semantic main
+  sections, one H1, H2 section hierarchy, visible focus states, touch-sized
+  controls, decorative `aria-hidden` elements, alt text for the meaningful hero
+  illustration, and reduced-motion CSS.
+- Added five public homepage tests covering public access, real price values,
+  empty master data, privacy, authenticated user/admin CTAs, no fake metrics,
+  and deterministic eight-row limits.
+- Deleted the obsolete landing-only stylesheet and twelve unreferenced legacy
+  image assets. The authenticated user panel, admin panel, auth backend,
+  financial services, schema, and persisted financial data were not changed.
+- P1.7.2 browser visual verification at 1440px, 390px, and 320px is NOT
+  VERIFIED because browser tooling is unavailable. Source breakpoints,
+  Blade compilation, HTTP rendering, and regression tests pass: 115 tests and
+  588 assertions, 0 failures, and 0 skipped. Composer audit reports 0
+  advisories.
 
 ### 2026-09-22 — P1.7.1 Authentication UI Redesign
 

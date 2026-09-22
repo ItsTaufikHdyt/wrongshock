@@ -10,23 +10,21 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Spatie\Permission\Models\Role;
 
-
 class RegisterController extends Controller
 {
-
     public function register(Request $request)
     {
         // Validasi input
         $validator = Validator::make($request->all(), [
-            'name'                  => 'required|string|max:255',
-            'email'                 => 'required|string|email|max:255|unique:users',
-            'address'               => 'required|string|max:255',
-            'district'              => 'required|integer|exists:districts,id',
-            'sub_district'          => 'required|integer|exists:sub_districts,id',
-            'password'              => 'required|string|min:8|confirmed',
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'address' => 'required|string|max:255',
+            'district' => 'required|integer|exists:districts,id',
+            'sub_district' => 'required|integer|exists:sub_districts,id',
+            'password' => 'required|string|min:8|confirmed',
         ], [
-            'email.unique'          => 'Email ini sudah terdaftar.',
-            'password.confirmed'    => 'Konfirmasi password tidak sama.',
+            'email.unique' => 'Email ini sudah terdaftar.',
+            'password.confirmed' => 'Konfirmasi password tidak sama.',
         ]);
 
         if ($validator->fails()) {
@@ -56,28 +54,29 @@ class RegisterController extends Controller
         $randomNumber = str_pad(rand(0, 9999), 4, '0', STR_PAD_LEFT);
 
         // gabungkan jadi format ID
-        $number = $kodeKota . $kodeDistrict . $kodeSubDistrict . $tahun . $randomNumber;
+        $number = $kodeKota.$kodeDistrict.$kodeSubDistrict.$tahun.$randomNumber;
 
         // Simpan ke database
         $user = User::create([
-            'number'            => $number, // contoh format nomor
-            'name'              => $request->name,
-            'email'             => $request->email,
-            'address'           => $request->address,
-            'district_id'       => $request->district,
-            'sub_district_id'   => $request->sub_district,
-            'password'          => Hash::make($request->password),
-            'status'            => 0, // tidak aktif
-            'balance'           => 0, // saldo awal
+            'number' => $number, // contoh format nomor
+            'name' => $request->name,
+            'email' => $request->email,
+            'address' => $request->address,
+            'district_id' => $request->district,
+            'sub_district_id' => $request->sub_district,
+            'password' => Hash::make($request->password),
+            'status' => 0, // tidak aktif
+            'balance' => 0, // saldo awal
         ]);
         $user->assignRole($userRole);
 
-        return redirect('/register')->with('success', 'Registrasi berhasil! Silahkan Hubungin Admin.');
+        return redirect('/register')->with('success', 'Pendaftaran berhasil. Akun Anda menunggu aktivasi dari pengelola.');
     }
 
     public function district()
     {
         $districts = District::pluck('name', 'id');
+
         return response()->json($districts);
     }
 
@@ -90,6 +89,7 @@ class RegisterController extends Controller
         }
 
         $subDistricts = $query->pluck('name', 'id');
+
         return response()->json($subDistricts);
     }
 }

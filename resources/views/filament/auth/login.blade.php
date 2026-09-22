@@ -74,6 +74,10 @@
                 />
             </x-filament-panels::form>
 
+            @if (! $isAdmin && \Illuminate\Support\Facades\Route::has('register'))
+                <p class="ws-auth-register-link">Belum menjadi anggota? <a href="{{ route('register') }}">Daftar Sekarang</a></p>
+            @endif
+
             {{ \Filament\Support\Facades\FilamentView::renderHook(\Filament\View\PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, scopes: $this->getRenderHookScopes()) }}
 
             @if ($isAdmin)

@@ -59,11 +59,12 @@ class UserPanelNavigationTest extends TestCase
             ->assertSee('Password')
             ->assertSee('Ingat saya')
             ->assertSee('Masuk ke Akun')
+            ->assertSee('Daftar Sekarang')
+            ->assertSee('/register', false)
             ->assertSee('Tampilkan password')
             ->assertSee('Sembunyikan password')
             ->assertSee('autocomplete="email"', false)
             ->assertSee('autocomplete="current-password"', false)
-            ->assertDontSee('Daftar Sekarang')
             ->assertDontSee('Area Pengelola');
 
         $this->get('/admin/login')
@@ -72,6 +73,7 @@ class UserPanelNavigationTest extends TestCase
             ->assertSee('Area Pengelola')
             ->assertSee('Masuk sebagai Admin')
             ->assertSee('Masuk ke Dashboard')
+            ->assertDontSee('Daftar Sekarang')
             ->assertDontSee('Sampah Hari Ini,');
     }
 

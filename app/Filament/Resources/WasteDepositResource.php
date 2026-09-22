@@ -108,8 +108,8 @@ class WasteDepositResource extends Resource
                             ->addActionLabel('Tambah Jenis Sampah')
                             ->deleteAction(fn (Forms\Components\Actions\Action $action) => $action->label('Hapus Jenis Sampah')->tooltip('Hapus jenis sampah dari setoran'))
                             ->live()
-                            ->afterStateHydrated(fn (array $state, Set $set) => self::syncAllPreview($state, $set))
-                            ->afterStateUpdated(fn (array $state, Set $set) => self::syncAllPreview($state, $set)),
+                            ->afterStateHydrated(fn (?array $state, Set $set) => self::syncAllPreview($state ?? [], $set))
+                            ->afterStateUpdated(fn (?array $state, Set $set) => self::syncAllPreview($state ?? [], $set)),
                     ]),
                 Forms\Components\Section::make('Ringkasan')
                     ->schema([
@@ -236,16 +236,28 @@ class WasteDepositResource extends Resource
                         ->label('Jenis Sampah')
                         ->schema([
                             TextEntry::make('waste_name_snapshot')->label('Jenis Sampah')->placeholder('Tidak tersedia'),
-                            TextEntry::make('quantity')->label('Jumlah'),
+                            TextEntry::make('quantity')
+                                ->label('Jumlah')
+                                ->formatStateUsing(fn ($state): string => self::formatQuantity($state)),
                             TextEntry::make('unit_snapshot')->label('Satuan'),
-                            TextEntry::make('unit_price_snapshot')->label('Harga per Satuan')->money('IDR'),
-                            TextEntry::make('subtotal')->label('Subtotal')->money('IDR'),
+                            TextEntry::make('unit_price_snapshot')
+                                ->label('Harga per Satuan')
+                                ->formatStateUsing(fn ($state): string => self::formatDisplayMoney($state)),
+                            TextEntry::make('subtotal')
+                                ->label('Subtotal')
+                                ->formatStateUsing(fn ($state): string => self::formatDisplayMoney($state)),
                         ])
                         ->columns(5),
+                    TextEntry::make('items_empty')
+                        ->label('')
+                        ->state('Detail item setoran tidak tersedia.')
+                        ->visible(fn ($record): bool => $record?->items?->isEmpty() ?? true),
                 ]),
             InfolistSection::make('Ringkasan')
                 ->schema([
-                    TextEntry::make('total_amount')->label('Total Setoran')->money('IDR'),
+                    TextEntry::make('total_amount')
+                        ->label('Total Setoran')
+                        ->formatStateUsing(fn ($state): string => self::formatDisplayMoney($state)),
                     TextEntry::make('cancellation_reason')->label('Alasan Pembatalan')->visible(fn ($record): bool => filled($record?->cancellation_reason)),
                 ]),
         ]);
@@ -350,5 +362,25 @@ class WasteDepositResource extends Resource
     private static function formatMoney(mixed $amount): string
     {
         return number_format((int) $amount, 0, ',', '.');
+    }
+
+    private static function formatDisplayMoney(mixed $amount): string
+    {
+        return 'Rp'.self::formatMoney($amount);
+    }
+
+    private static function formatQuantity(mixed $quantity): string
+    {
+        $value = trim((string) $quantity);
+
+        if ($value === '') {
+            return '0';
+        }
+
+        if (str_contains($value, '.')) {
+            $value = rtrim(rtrim($value, '0'), '.');
+        }
+
+        return str_replace('.', ',', $value);
     }
 }

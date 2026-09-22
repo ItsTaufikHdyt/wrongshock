@@ -396,6 +396,15 @@ and cached balance. Posted deposits remain non-editable; draft edit routes
 remain limited to their existing workflow. P1.8 Final User UI QA remains NOT
 STARTED.
 
+The approved detail action also received a read-side bugfix. Opening the
+Filament `Lihat Detail` modal could hydrate the Setoran repeater with `null`
+while its callbacks required `array`, causing a `TypeError`. Hydration and
+update callbacks now treat an empty state as an empty list. The detail
+infolist renders snapshot name, unit, price, subtotal, decimal quantity, stored
+total, mapped status, cancellation reason, and a safe no-item state without
+consulting current master prices. Posted/cancelled/draft behavior and admin
+authorization remain unchanged.
+
 ## Critical Rules During Implementation
 
 -   Never "fix" historical financial data by deleting records.
@@ -471,6 +480,33 @@ Add entries in reverse chronological order.
 - Browser verification at 1440px, 1024px, 768px, and 390px is NOT VERIFIED
   because browser tooling is unavailable. Blade rendering, focused tests, and
   responsive source rules pass. No manual financial transaction was created.
+
+### 2026-09-22 — Admin Deposit Detail Bugfix
+
+- Reproduced `ADMIN -> SETORAN -> Lihat Detail` through the actual Filament
+  table action. The action uses a read-only modal/infolist; there is no separate
+  detail route. Posted multi-item data reproduced a `TypeError` at
+  `WasteDepositResource.php:111`: the repeater `afterStateHydrated` callback
+  required `array`, but Filament supplied `null` during modal hydration.
+- Made repeater hydration and update callbacks null-safe without changing
+  `DepositService`, transaction architecture, authorization, or status rules.
+- Kept detail values snapshot-first: historical name, unit, unit price,
+  subtotal, quantity, and saved deposit total. Added natural quantity and Rupiah
+  formatting, mapped status text, cancellation reason display, deleted-master
+  safety, and `Detail item setoran tidak tersedia.` for empty history.
+- Added seven focused detail tests with 61 assertions covering admin access,
+  denied user/inactive/revoked admin access, posted/cancelled/draft states,
+  multiple items, historical price changes, deleted masters, empty items,
+  decimal quantity, and zero financial side effects.
+- Financial DB before and after this bugfix remained: 3 users, cached balance
+  2,060,800, 6 ledger entries including 2 opening balances, ledger net
+  2,060,800, 3 deposits, 7 deposit items, 0 withdrawals, and 3 MATCH / 0
+  MISMATCH. Financial Data Changed: NO.
+- Full regression after the detail fix passed with 140 tests and 768
+  assertions, 0 failures, and 0 skipped. Blade cache, Pint, and
+  `git diff --check` passed. Composer audit reports 0 advisories.
+- Browser verification at 1440px and 390px is NOT VERIFIED because browser
+  tooling is unavailable. P1.8 remains NOT STARTED.
 
 ### 2026-09-22 — P1.7.4 Admin Panel & Operational Dashboard Redesign
 

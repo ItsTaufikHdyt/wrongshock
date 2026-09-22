@@ -2,15 +2,17 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\AdminDashboard;
+use App\Filament\Pages\Auth\Login as CustomLogin;
+use App\Http\Middleware\EnsureActiveUser;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Widgets;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -18,8 +20,6 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Spatie\Permission\Middleware\RoleMiddleware;
-use App\Filament\Pages\Auth\Login as CustomLogin;
-use App\Http\Middleware\EnsureActiveUser;
 
 class AdminPanelPanelProvider extends PanelProvider
 {
@@ -33,16 +33,17 @@ class AdminPanelPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Green,
             ])
+            ->sidebarCollapsibleOnDesktop()
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
-                Pages\Dashboard::class,
+                AdminDashboard::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
-            ->widgets([
-                Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
-            ])
+            ->renderHook(PanelsRenderHook::STYLES_BEFORE, fn () => view('filament.admin.hooks.styles'))
+            ->renderHook(PanelsRenderHook::SIDEBAR_FOOTER, fn () => view('filament.admin.hooks.sidebar-footer'))
+            ->renderHook(PanelsRenderHook::SIDEBAR_NAV_START, fn () => view('filament.admin.hooks.brand'))
+            ->renderHook(PanelsRenderHook::TOPBAR_START, fn () => view('filament.admin.hooks.topbar-title'))
+            ->renderHook(PanelsRenderHook::TOPBAR_END, fn () => view('filament.admin.hooks.topbar-identity'))
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -58,7 +59,7 @@ class AdminPanelPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
                 EnsureActiveUser::class,
-                RoleMiddleware::class . ':admin',
+                RoleMiddleware::class.':admin',
             ]);
     }
 }

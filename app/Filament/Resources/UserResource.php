@@ -3,28 +3,32 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\UserResource\Pages;
-use App\Filament\Resources\UserResource\RelationManagers;
-use App\Models\User;
 use App\Models\District;
 use App\Models\SubDistrict;
+use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
+use Illuminate\Support\Str;
 
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
+    protected static ?string $modelLabel = 'Anggota';
+
+    protected static ?string $pluralModelLabel = 'Anggota';
+
     protected static ?string $navigationIcon = 'heroicon-o-user-circle';
-    protected static ?string $navigationGroup = 'System';
+
+    protected static ?string $navigationLabel = 'Anggota';
+
+    protected static ?string $pluralLabel = 'Anggota';
+
+    protected static ?string $navigationGroup = 'Anggota';
 
     public static function form(Form $form): Form
     {
@@ -34,10 +38,10 @@ class UserResource extends Resource
                     Forms\Components\Grid::make(2)
                         ->schema([
                             Forms\Components\TextInput::make('name')
-                                ->label('Nama')
+                                ->label('Nama Anggota')
                                 ->required(),
                             Forms\Components\TextInput::make('number')
-                                ->label('ID Pengguna')
+                                ->label('Nomor Anggota')
                                 ->required()
                                 ->disabled(true)
                                 ->default(function () {
@@ -53,7 +57,7 @@ class UserResource extends Resource
                                     $randomNumber = str_pad(rand(0, 9999), 4, '0', STR_PAD_LEFT);
 
                                     // gabungkan jadi format ID
-                                    return $kodeKota . $kodeDistrict . $kodeSubDistrict . $tahun . $randomNumber;
+                                    return $kodeKota.$kodeDistrict.$kodeSubDistrict.$tahun.$randomNumber;
                                 })
                                 ->dehydrated(), // pastikan tetap dikirim ke database
                         ]),
@@ -63,12 +67,12 @@ class UserResource extends Resource
                             Forms\Components\TextInput::make('email')
                                 ->required(),
                             Forms\Components\TextInput::make('password')
-                                ->label('Password')
+                                ->label('Kata Sandi')
                                 ->password()
-                                ->required(fn($livewire) => $livewire instanceof \Filament\Resources\Pages\CreateRecord)
+                                ->required(fn ($livewire) => $livewire instanceof \Filament\Resources\Pages\CreateRecord)
                                 ->nullable()
-                                ->dehydrated(fn($state) => filled($state))
-                                ->dehydrateStateUsing(fn($state) => filled($state) ? bcrypt($state) : null),
+                                ->dehydrated(fn ($state) => filled($state))
+                                ->dehydrateStateUsing(fn ($state) => filled($state) ? bcrypt($state) : null),
                         ]),
 
                     Forms\Components\Grid::make(2)
@@ -76,15 +80,14 @@ class UserResource extends Resource
                             Forms\Components\Select::make('district_id')
                                 ->label('Kecamatan')
                                 ->required()
-                                ->options(fn() => District::pluck('name', 'id'))
+                                ->options(fn () => District::pluck('name', 'id'))
                                 ->searchable(),
                             Forms\Components\Select::make('sub_district_id')
                                 ->label('Kelurahan')
                                 ->required()
                                 ->reactive()
                                 ->options(
-                                    fn($get) =>
-                                    SubDistrict::where('district_id', $get('district_id'))->pluck('name', 'id')
+                                    fn ($get) => SubDistrict::where('district_id', $get('district_id'))->pluck('name', 'id')
                                 )
                                 ->searchable(),
                         ]),
@@ -93,6 +96,7 @@ class UserResource extends Resource
                         ->required()
                         ->maxLength(255),
                     Forms\Components\FileUpload::make('image')
+                        ->label('Foto Profil')
                         ->required()
                         ->image(),
                     Forms\Components\Select::make('status')
@@ -105,11 +109,10 @@ class UserResource extends Resource
                         ->native(false),
                     Forms\Components\Select::make('roles')
                         ->required()
-                        ->label('Role')
+                        ->label('Peran')
                         ->relationship('roles', 'name')
                         ->preload()
-                        ->searchable()
-
+                        ->searchable(),
 
                 ]),
 
@@ -121,14 +124,14 @@ class UserResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->label('Nama')
+                    ->label('Nama Anggota')
                     ->sortable()
                     ->searchable(),
                 Tables\Columns\ImageColumn::make('image')
                     ->label('Foto Profil')
                     ->circular(),
                 Tables\Columns\TextColumn::make('number')
-                    ->label('ID Pengguna')
+                    ->label('Nomor Anggota')
                     ->sortable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('status')
@@ -136,10 +139,10 @@ class UserResource extends Resource
                     ->sortable()
                     ->searchable()
                     ->badge()
-                    ->formatStateUsing(fn($state) => $state == 1 ? 'Aktif' : 'Nonaktif')
+                    ->formatStateUsing(fn ($state) => $state == 1 ? 'Aktif' : 'Nonaktif')
                     ->colors([
                         'success' => 1,   // hijau untuk status = 1
-                        'danger'  => 0,   // merah untuk status = 0
+                        'danger' => 0,   // merah untuk status = 0
                     ]),
                 Tables\Columns\TextColumn::make('email')
                     ->label('Email')
@@ -155,9 +158,9 @@ class UserResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('address')
                     ->label('Alamat')
-                    ->formatStateUsing(fn($state) => Str::limit($state, 30)),
+                    ->formatStateUsing(fn ($state) => Str::limit($state, 30)),
                 Tables\Columns\TagsColumn::make('roles.name')
-                    ->label('Role')
+                    ->label('Peran')
                     ->sortable()
                     ->searchable(),
 
@@ -165,19 +168,20 @@ class UserResource extends Resource
                     ->label('Saldo')
                     ->sortable()
                     ->searchable()
-                    ->formatStateUsing(fn($state) => $state !== null ? 'Rp ' . number_format($state, 0, '', '.') : ''),
+                    ->formatStateUsing(fn ($state) => $state !== null ? 'Rp '.number_format($state, 0, '', '.') : ''),
             ])
             ->filters([
                 //
             ])
+            ->searchPlaceholder('Cari anggota...')
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ViewAction::make()->label('Lihat Detail'),
+                Tables\Actions\EditAction::make()->label('Edit Anggota'),
+                Tables\Actions\DeleteAction::make()->label('Hapus Anggota'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()->label('Hapus Anggota Terpilih'),
                 ]),
             ]);
     }

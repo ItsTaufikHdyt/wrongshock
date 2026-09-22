@@ -3,25 +3,28 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\DistrictResource\Pages;
-use App\Filament\Resources\DistrictResource\RelationManagers;
 use App\Models\District;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class DistrictResource extends Resource
 {
     protected static ?string $model = District::class;
+
+    protected static ?string $modelLabel = 'Kecamatan';
+
+    protected static ?string $pluralModelLabel = 'Kecamatan';
+
     protected static ?string $pluralLabel = 'Kecamatan';
 
-    protected static ?string $navigationIcon = 'heroicon-o-globe-americas';
-    protected static ?string $navigationGroup = 'System';
+    protected static ?string $navigationLabel = 'Kecamatan';
 
-    
+    protected static ?string $navigationIcon = 'heroicon-o-globe-americas';
+
+    protected static ?string $navigationGroup = 'Master Data';
 
     public static function form(Form $form): Form
     {
@@ -50,14 +53,15 @@ class DistrictResource extends Resource
             ->filters([
                 //
             ])
+            ->searchPlaceholder('Cari kecamatan...')
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ViewAction::make()->label('Lihat Detail'),
+                Tables\Actions\EditAction::make()->label('Edit Kecamatan'),
+                Tables\Actions\DeleteAction::make()->label('Hapus Kecamatan'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()->label('Hapus Kecamatan Terpilih'),
                 ]),
             ]);
     }

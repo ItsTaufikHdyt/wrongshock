@@ -17,20 +17,28 @@ class WithdrawalResource extends Resource
 {
     protected static ?string $model = Withdrawal::class;
 
+    protected static ?string $modelLabel = 'Penarikan';
+
+    protected static ?string $pluralModelLabel = 'Penarikan';
+
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
-    protected static ?string $navigationGroup = 'Bank Sampah';
+
+    protected static ?string $navigationGroup = 'Transaksi';
+
     protected static ?string $pluralLabel = 'Penarikan Saldo';
+
+    protected static ?string $navigationLabel = 'Penarikan';
 
     public static function form(Form $form): Form
     {
         return $form->schema([
             Forms\Components\Select::make('user_id')
-                ->label('Pengguna')
+                ->label('Anggota')
                 ->options(fn () => User::query()->orderBy('name')->pluck('name', 'id'))
                 ->searchable()
                 ->required(),
             Forms\Components\TextInput::make('amount')
-                ->label('Jumlah (Rp)')
+                ->label('Jumlah Penarikan')
                 ->numeric()
                 ->integer()
                 ->minValue(1)
@@ -46,14 +54,21 @@ class WithdrawalResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('user.name')
-                    ->label('Pengguna')
+                    ->label('Nama Anggota')
                     ->sortable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('amount')
-                    ->label('Jumlah')
+                    ->label('Jumlah Penarikan')
                     ->money('IDR')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
+                    ->label('Status')
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'pending' => 'Menunggu',
+                        'approved' => 'Disetujui',
+                        'rejected' => 'Ditolak',
+                        default => $state,
+                    })
                     ->badge()
                     ->colors([
                         'warning' => 'pending',
@@ -61,11 +76,11 @@ class WithdrawalResource extends Resource
                         'danger' => 'rejected',
                     ]),
                 Tables\Columns\TextColumn::make('requested_date')
-                    ->label('Diajukan')
+                    ->label('Tanggal Permintaan')
                     ->date()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('processed_date')
-                    ->label('Diproses')
+                    ->label('Tanggal Diproses')
                     ->date()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('note')
@@ -73,9 +88,10 @@ class WithdrawalResource extends Resource
                     ->limit(50)
                     ->toggleable(),
             ])
+            ->searchPlaceholder('Cari penarikan...')
             ->actions([
                 Tables\Actions\Action::make('approve')
-                    ->label('Setujui')
+                    ->label('Setujui Penarikan')
                     ->color('success')
                     ->icon('heroicon-o-check-circle')
                     ->visible(fn (Withdrawal $record): bool => $record->status === 'pending')
@@ -87,7 +103,7 @@ class WithdrawalResource extends Resource
                         app(WithdrawalService::class)->approve($record, Auth::id());
                     }),
                 Tables\Actions\Action::make('reject')
-                    ->label('Tolak')
+                    ->label('Tolak Penarikan')
                     ->color('danger')
                     ->icon('heroicon-o-x-circle')
                     ->visible(fn (Withdrawal $record): bool => $record->status === 'pending')

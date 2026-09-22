@@ -2,7 +2,7 @@
 
 ## Overall
 
-**Current status: P1.7.3 COMPLETE / P1.8 NOT STARTED / M8 COMPLETE**
+**Current status: P1.7.4.1 COMPLETE / P1.8 NOT STARTED / M8 COMPLETE**
 
 This document tracks implementation against `prd.md`. It must be updated
 after every meaningful coding session.
@@ -337,6 +337,65 @@ location endpoints return only id/name maps and the dependent select now has
 loading, disabled, and failure states. P1.8 Final User UI QA remains NOT
 STARTED.
 
+### P1.7.4 --- Admin Panel & Operational Dashboard Redesign
+
+Status: COMPLETE. Replaced the default admin dashboard widget set with a
+Wrongshock operational overview while preserving Filament resources, routes,
+authorization, and all financial services. The admin shell now uses a restrained
+deep-green, mint, warm off-white, and yellow-accent system: branded sidebar,
+resource groups, contextual topbar, admin identity, responsive cards, dense
+tables, and operational empty states.
+
+The dashboard reads authoritative data only. Primary KPIs are total member
+accounts excluding admins, posted deposits this month, posted deposit value
+this month, and members with a posted deposit this month. The six-month trend
+uses posted deposit value grouped from `deposit_date`. The composition card uses
+posted item `subtotal` grouped by `category_snapshot`, with the current master
+category only as a legacy fallback. Quantity is intentionally not aggregated:
+the master data supports multiple units and a combined Kg/gram value would be
+misleading.
+
+Recent deposits are limited to six and preserve stored historical totals and
+statuses. Operational attention shows only existing actionable states: inactive
+member accounts and pending withdrawals. The dashboard has no reconciliation
+KPI, fake environmental metrics, notifications, or new workflow. Existing
+resources remain reachable and are grouped as Anggota, Transaksi, and Master
+Data with Indonesian labels. The former standalone dashboard charts remain in
+the codebase but are no longer registered, avoiding their unfiltered and
+unit-unsafe queries without deleting working resource functionality.
+
+Authorization remains enforced by the existing active-user and admin-role
+middleware. The dashboard is read-only, uses count/sum/grouped queries rather
+than loading all transaction rows, and eager-loads recent member identity. The
+snapshot fallback remains safe after a master waste item is deleted. P1.8 Final
+User UI QA remains NOT STARTED.
+
+### P1.7.4.1 --- Admin UX & Deposit Flow Refinement
+
+Status: COMPLETE. Refined the approved P1.7.4 admin shell without redesigning
+the dashboard. Navigation now presents only operational resources as Dashboard,
+Anggota, Transaksi (Setoran and Penarikan), and Master Data (Jenis Sampah and
+Wilayah through Kecamatan/Kelurahan). The internal Rincian Setoran resource
+remains routable but is removed from the sidebar. Resource/page/action labels,
+search placeholders, table headings, status text, form sections, save actions,
+and detail labels now use consistent Indonesian terminology.
+
+Setoran form audit found the preview bug at the repeater boundary: total was
+only calculated in the repeater's `afterStateUpdated`, so child field changes
+could update row state without recalculating the parent total. The form now
+uses live select/quantity fields, a single preview calculator, and repeater
+callbacks for add/remove/hydration. It displays actual master unit, current
+preview price, half-up decimal subtotal, and total immediately. Blank/unknown
+preview values resolve safely to zero, and mobile repeater columns collapse
+from one to five columns responsively.
+
+Preview `price`, `subtotal`, and `total_amount` are not dehydrated as financial
+truth. `DepositService` remains unchanged and independently resolves master
+items, unit price, quantity precision, snapshots, subtotal, total, ledger credit,
+and cached balance. Posted deposits remain non-editable; draft edit routes
+remain limited to their existing workflow. P1.8 Final User UI QA remains NOT
+STARTED.
+
 ## Critical Rules During Implementation
 
 -   Never "fix" historical financial data by deleting records.
@@ -374,6 +433,83 @@ STARTED.
 ## Session Log
 
 Add entries in reverse chronological order.
+
+### 2026-09-22 — P1.7.4.1 Admin UX & Deposit Flow Refinement
+
+- Audited current admin provider/navigation, resource labels, form/page actions,
+  table headings, breadcrumbs/default Filament terminology, and the Setoran
+  form/create/edit flow. Confirmed `DepositService` is authoritative and that
+  the existing form callbacks were only preview logic.
+- Standardized visible terminology: Pengguna became Anggota, Setor Limbah
+  became Setoran, Daftar Harga Limbah became Jenis Sampah, Output became Hasil
+  Pengolahan, Diajukan became Tanggal Permintaan, Diproses became Tanggal
+  Diproses, and default Create/Edit/View/Delete/Search labels now use natural
+  Indonesian labels. Master mapping is `category` = Kategori Sampah,
+  `output` = Hasil Pengolahan, `unit` = Satuan, and `price` = Harga per Satuan.
+- Refined Setoran into Informasi Setoran, Detail Sampah, and Ringkasan. The
+  repeater action is `Tambah Jenis Sampah`; rows show Jenis Sampah, Jumlah,
+  Satuan, Harga per Satuan, and Subtotal. Remove has an accessible Indonesian
+  tooltip. Saved values remain service-authoritative and preview fields are
+  explicitly non-dehydrated.
+- Fixed immediate preview behavior for select, quantity, add, remove, change,
+  decimal quantity, blank quantity, and actual master units. Added an Infolist
+  for Setoran detail using historical item snapshots and clear cancellation
+  information.
+- Added `AdminDepositFormTest` with helper and direct Livewire coverage. The
+  live form now proves quantity changes update subtotal and total without
+  adding another row. Existing DepositService tests continue to protect
+  manipulated-preview/server-authority behavior.
+- Focused refinement suite passed with 4 tests and 13 assertions. Full
+  regression passed with 133 tests and 707 assertions, 0 failures, and 0
+  skipped. Blade cache, Pint, and `git diff --check` passed. Composer audit
+  reports 0 advisories; the package index had a network timeout but local
+  advisory data was clean.
+- Financial DB before and after remained: 3 users, cached balance
+  2,017,800, 5 ledger entries including 2 opening balances, ledger net
+  2,017,800, 2 deposits, 4 deposit items, 0 withdrawals, and 3 MATCH / 0
+  MISMATCH. Financial Data Changed: NO.
+- Browser verification at 1440px, 1024px, 768px, and 390px is NOT VERIFIED
+  because browser tooling is unavailable. Blade rendering, focused tests, and
+  responsive source rules pass. No manual financial transaction was created.
+
+### 2026-09-22 — P1.7.4 Admin Panel & Operational Dashboard Redesign
+
+- Audited the existing `AdminPanelPanelProvider`, six discovered resources,
+  three legacy chart widgets, panel middleware, resource navigation, and
+  `User::canAccessPanel`. The old dashboard was the default Filament page plus
+  account/info widgets and legacy charts. The legacy charts were not suitable:
+  they did not consistently filter posted status, one labeled mixed units as
+  Kg, and one joined current waste master categories for historical data.
+- Added `AdminDashboard`, a custom Filament dashboard page with a compact
+  welcome block, four truthful KPIs, six-month posted-value trend, snapshot
+  category composition, member summary, recent deposits, and operational
+  attention. The chart is a native accessible HTML/CSS bar view, so no second
+  chart library or CDN dependency was added.
+- Added scoped `public/css/admin-panel.css` and admin render hooks for brand,
+  topbar title, admin identity, sidebar note, and shell styling. Existing
+  resources remain operational; only navigation labels/groups and shared visual
+  presentation changed. User-panel, public, and admin-login styles remain
+  isolated.
+- Grouped existing navigation as Dashboard, Anggota, Transaksi (Setoran,
+  Rincian Setoran, Penarikan), and Master Data (Jenis Sampah, Kecamatan,
+  Kelurahan). No unimplemented feature or quick action was added.
+- Added `AdminDashboardTest` covering authorized access, ordinary/inactive/
+  revoked denial, member exclusion of admins, posted-only KPI semantics,
+  snapshot safety after master deletion, mixed-unit safety, pending/inactive
+  attention, and read-only behavior.
+- Focused admin suite passed with 7 tests and 26 assertions. Full regression
+  passed with 129 tests and 694 assertions, 0 failures, and 0 skipped. Blade
+  cache, Pint, and `git diff --check` passed. Composer audit reports 0
+  advisories.
+- Financial values remained unchanged: cached balance and ledger net are
+  2,017,800, ledger entries are 5 including 2 opening balances, deposits are 2,
+  deposit items are 4, withdrawals are 0, and reconciliation is 3 MATCH / 0
+  MISMATCH in the current database snapshot. The database contains one
+  additional zero-balance inactive member from the existing development state;
+  no dashboard request created or changed financial records.
+- Browser verification at 1440px, 768px, and 390px is NOT VERIFIED because
+  browser tooling is unavailable. Automated admin/user authorization and
+  server-rendered smoke checks pass. P1.8 remains NOT STARTED.
 
 ### 2026-09-22 — P1.7.3 Public Registration UI Redesign
 

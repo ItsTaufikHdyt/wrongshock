@@ -3,24 +3,29 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\SubDistrictResource\Pages;
-use App\Filament\Resources\SubDistrictResource\RelationManagers;
-use App\Models\SubDistrict;
 use App\Models\District;
+use App\Models\SubDistrict;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SubDistrictResource extends Resource
 {
     protected static ?string $model = SubDistrict::class;
+
+    protected static ?string $modelLabel = 'Kelurahan';
+
+    protected static ?string $pluralModelLabel = 'Kelurahan';
+
     protected static ?string $pluralLabel = 'Kelurahan';
 
+    protected static ?string $navigationLabel = 'Kelurahan';
+
     protected static ?string $navigationIcon = 'heroicon-o-globe-americas';
-    protected static ?string $navigationGroup = 'System';
+
+    protected static ?string $navigationGroup = 'Master Data';
 
     public static function form(Form $form): Form
     {
@@ -58,14 +63,15 @@ class SubDistrictResource extends Resource
             ->filters([
                 //
             ])
+            ->searchPlaceholder('Cari kelurahan...')
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ViewAction::make()->label('Lihat Detail'),
+                Tables\Actions\EditAction::make()->label('Edit Kelurahan'),
+                Tables\Actions\DeleteAction::make()->label('Hapus Kelurahan'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()->label('Hapus Kelurahan Terpilih'),
                 ]),
             ]);
     }

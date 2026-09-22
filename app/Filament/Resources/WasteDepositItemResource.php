@@ -3,25 +3,27 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\WasteDepositItemResource\Pages;
-use App\Filament\Resources\WasteDepositItemResource\RelationManagers;
 use App\Models\WasteDepositItem;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class WasteDepositItemResource extends Resource
 {
     protected static ?string $model = WasteDepositItem::class;
-    protected static ?string $pluralLabel = 'History Setor Limbah';
+
+    protected static ?string $modelLabel = 'Rincian Setoran';
+
+    protected static ?string $pluralModelLabel = 'Rincian Setoran';
+
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?int $navigationSort = 2;
 
-
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-    protected static ?string $navigationGroup = 'Bank Sampah';
+
+    protected static ?string $navigationGroup = 'Transaksi';
 
     public static function form(Form $form): Form
     {
@@ -36,7 +38,7 @@ class WasteDepositItemResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('wasteDeposit.user.name')
-                    ->label('Nama Pengguna')
+                    ->label('Nama Anggota')
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('wasteItem.category')
@@ -44,25 +46,26 @@ class WasteDepositItemResource extends Resource
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('quantity')
-                    ->label('Jumlah (kg)'),
+                    ->label('Jumlah'),
 
                 Tables\Columns\TextColumn::make('subtotal')
                     ->label('Subtotal (Rp)')
                     ->money('IDR'),
 
                 Tables\Columns\TextColumn::make('wasteDeposit.deposit_date')
-                    ->label('Tanggal Setor')
+                    ->label('Tanggal Setoran')
                     ->date(),
             ])
             ->filters([
                 //
             ])
+            ->searchPlaceholder('Cari rincian setoran...')
             ->actions([
-               
+
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    
+
                 ]),
             ]);
     }

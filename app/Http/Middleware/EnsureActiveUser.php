@@ -18,7 +18,7 @@ class EnsureActiveUser
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            abort(403, 'Your account is inactive.');
+            abort(403, 'Akun Anda tidak aktif.');
         }
 
         return $next($request);

@@ -49,17 +49,30 @@ class UserPanelNavigationTest extends TestCase
         $this->actingAs($admin)->get('/user')->assertForbidden();
     }
 
-    public function test_user_login_uses_member_facing_copy_without_changing_admin_login(): void
+    public function test_user_and_admin_login_pages_use_distinct_wrongshock_copy(): void
     {
         $this->get('/user/login')
             ->assertOk()
-            ->assertSee('Masuk ke akun Wrongshock')
+            ->assertSee('Sampah Hari Ini,')
+            ->assertSee('Selamat Datang!')
+            ->assertSee('Email')
+            ->assertSee('Password')
             ->assertSee('Ingat saya')
-            ->assertSee('Masuk');
+            ->assertSee('Masuk ke Akun')
+            ->assertSee('Tampilkan password')
+            ->assertSee('Sembunyikan password')
+            ->assertSee('autocomplete="email"', false)
+            ->assertSee('autocomplete="current-password"', false)
+            ->assertDontSee('Daftar Sekarang')
+            ->assertDontSee('Area Pengelola');
 
         $this->get('/admin/login')
             ->assertOk()
-            ->assertDontSee('Masuk ke akun Wrongshock');
+            ->assertSee('Kelola Wrongshock')
+            ->assertSee('Area Pengelola')
+            ->assertSee('Masuk sebagai Admin')
+            ->assertSee('Masuk ke Dashboard')
+            ->assertDontSee('Sampah Hari Ini,');
     }
 
     public function test_user_login_validation_and_logout_complete_the_member_journey(): void

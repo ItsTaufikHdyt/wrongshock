@@ -2,7 +2,7 @@
 
 ## Overall
 
-**Current status: P1 USER UI/UX REDESIGN COMPLETE / M8 COMPLETE**
+**Current status: P1.7.1 COMPLETE / P1.8 NOT STARTED / M8 COMPLETE**
 
 This document tracks implementation against `prd.md`. It must be updated
 after every meaningful coding session.
@@ -293,16 +293,16 @@ regression checks are complete. Developer manual browser QA passed for desktop,
 390px mobile, and the 320px overflow check without regressions to the approved
 visual design.
 
-### P1.8 --- Final User UI QA
+### P1.7.1 --- Authentication UI Redesign
 
-Status: COMPLETE. The complete Login -> Beranda -> Riwayat Setoran -> Detail
-Setoran -> Profil -> Logout journey was audited for routing, ownership, data
-truth, snapshots, empty/error states, responsive content, accessibility, and
-admin isolation. User login copy and failure feedback are now Indonesian.
-Obsolete user-panel resource discovery, inert CSS/view hooks, and four
-unreferenced legacy image assets were removed. Full regression, dependency
-audit, route audit, Blade compilation, formatting, reconciliation, and
-financial baseline checks pass without changing financial or admin behavior.
+Status: COMPLETE. User and admin login pages now use a responsive split-screen
+Wrongshock eco-finance presentation while retaining separate routes, page
+classes, role rules, and panel destinations. User login is cheerful and
+community-oriented; admin login is more restrained and operational. Explicit
+labels, password visibility controls, autocomplete, focus treatment, touch
+targets, generic errors, loading behavior, and mobile layouts remain backed by
+Filament's existing form and authentication behavior. Auth CSS loads only on
+login pages. P1.8 Final User UI QA has not started.
 
 ## Critical Rules During Implementation
 
@@ -342,35 +342,44 @@ financial baseline checks pass without changing financial or admin behavior.
 
 Add entries in reverse chronological order.
 
-### 2026-09-22 — P1.8 Final User UI QA
+### 2026-09-22 — P1.7.1 Authentication UI Redesign
 
-- Audited the complete authenticated member journey, canonical routes,
-  user-owned query boundaries, snapshot-first transaction rendering, status and
-  Rupiah formatting, empty/error states, profile write allow-list, responsive
-  source safeguards, keyboard/touch semantics, and user-panel CSS isolation.
-- Added a user-panel-specific login page with Indonesian heading, labels,
-  remember action, submit action, failed-authentication message, and
-  rate-limit feedback. The admin login remains on the existing shared page.
-- Removed obsolete user-panel resource discovery, an inert legacy profile-route
-  title condition, unused view/CSS hooks, and four unreferenced assets under
-  `public/assets/image`. Intentional authenticated legacy profile redirects
-  remain for compatibility.
-- Route audit confirms one canonical Beranda, Riwayat Setoran, Detail Setoran,
-  and Profil destination with no user-facing CRUD resource or duplicate default
-  dashboard.
-- Verification: Blade cache compiled, Pint passed, `git diff --check` passed,
-  full regression passed with 102 tests and 478 assertions, and Composer audit
-  reported 0 advisories.
+- Before architecture: `/user/login` used
+  `App\Filament\UserPanel\Pages\Auth\Login`, which extends the shared
+  `App\Filament\Pages\Auth\Login`; `/admin/login` used the shared class
+  directly. Both panels used the session-based `web` guard and `users` provider,
+  but `User::canAccessPanel()`, active-status enforcement, and panel-specific
+  role middleware kept access and destinations separate.
+- Existing authentication authority remains unchanged: five-attempt Livewire
+  throttling, credential verification, remember-me state, session regeneration,
+  CSRF-protected Filament logout, and panel-specific login/logout responses.
+- Redesigned both login screens with one scoped view system and distinct user
+  and admin variants. Desktop uses a substantial split-screen composition;
+  mobile prioritizes the form while retaining a compact Wrongshock brand and
+  environmental illustration.
+- Reused the approved local `eco-community.svg`; no dependency, remote image,
+  base64 asset, registration route, or new product capability was added.
+- User login uses cheerful mint/sky/yellow accents and community copy. Admin
+  login uses deep green, white, and soft mint with an explicit Area Pengelola
+  context and only existing operational capabilities in its copy.
+- Added explicit Indonesian labels and generic authentication errors,
+  `email`/`current-password` autocomplete, Indonesian password-toggle names,
+  visible focus, approximately 44px controls, wrapping validation, reduced
+  motion handling, and decorative elements ignored by assistive technology.
+- Focused auth/authorization/navigation regression passed with 28 tests and 154
+  assertions. Full regression passed with 110 tests and 554 assertions. Blade
+  compilation, Pint, and `git diff --check` passed. Composer audit reported 0
+  advisories using local cache after Packagist timed out.
 - Development financial baseline remained unchanged at 2 users, cached and
   ledger net 2,017,800, 5 ledger entries including 2 opening balances, 2
   deposits, 4 deposit items, and 0 withdrawals. Reconciliation remained 2
   MATCH and 0 MISMATCH.
-- P1.5 member withdrawal UX remains deliberately deferred because it is a new
-  product capability. No financial service, schema, ledger semantics, persisted
-  financial data, or admin panel implementation changed.
-- Prior P1.7 manual browser QA remains passed for desktop, 390px, and 320px.
-  Browser automation was unavailable for a new visual smoke check of the
-  login-copy-only P1.8 change; HTTP rendering and journey regressions pass.
+- Auth CSS isolation tests confirm it is absent from authenticated Beranda and
+  admin dashboard responses. No authenticated user page, admin dashboard,
+  resource, financial service, schema, or persisted financial data changed.
+- Browser tooling was unavailable, so visual verification at 1440px, 390px,
+  and 320px is NOT VERIFIED. Source breakpoints and render regressions pass.
+- P1.7.1 is COMPLETE. P1.8 Final User UI QA remains NOT STARTED.
 
 ### 2026-09-21 — P1.7 Manual Browser QA Confirmation
 

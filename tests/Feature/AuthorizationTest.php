@@ -78,6 +78,7 @@ class AuthorizationTest extends TestCase
         $request->setLaravelSession(app('session')->driver());
 
         $this->expectException(HttpException::class);
+        $this->expectExceptionMessage('Akun Anda tidak aktif.');
         (new EnsureActiveUser)->handle($request, fn () => response('ok'));
     }
 

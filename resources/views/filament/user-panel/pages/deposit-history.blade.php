@@ -15,18 +15,18 @@
         </section>
 
         <section class="ws-summary-grid" aria-label="Ringkasan riwayat setoran">
-            <article class="ws-summary-card">
+            <div class="ws-summary-card">
                 <span class="ws-icon-box ws-icon-mint" aria-hidden="true"><x-filament::icon icon="heroicon-o-check-circle" /></span>
                 <div><p>Total Setoran</p><strong>{{ number_format($summary['posted_count'], 0, ',', '.') }}</strong><span>transaksi berhasil</span></div>
-            </article>
-            <article class="ws-summary-card">
+            </div>
+            <div class="ws-summary-card">
                 <span class="ws-icon-box ws-icon-yellow" aria-hidden="true"><x-filament::icon icon="heroicon-o-banknotes" /></span>
                 <div><p>Total Nilai Setoran</p><strong>{{ $this->formatRupiah($summary['posted_value']) }}</strong><span>dari setoran berhasil</span></div>
-            </article>
-            <article class="ws-summary-card">
+            </div>
+            <div class="ws-summary-card">
                 <span class="ws-icon-box ws-icon-rose" aria-hidden="true"><x-filament::icon icon="heroicon-o-x-circle" /></span>
                 <div><p>Setoran Dibatalkan</p><strong>{{ number_format($summary['cancelled_count'], 0, ',', '.') }}</strong><span>transaksi</span></div>
-            </article>
+            </div>
         </section>
 
         <section class="ws-content-section" aria-labelledby="deposit-list-heading">
@@ -35,18 +35,20 @@
                     <h2 id="deposit-list-heading">Daftar Riwayat Setoran</h2>
                     <p>Berikut adalah riwayat setoran sampah Anda.</p>
                 </div>
-                <nav aria-label="Filter status setoran" class="ws-filter-group">
+                <div role="group" aria-label="Filter status setoran" class="ws-filter-group">
                     @foreach ($this->filterOptions() as $value => $label)
                         <button type="button" wire:click="setStatus('{{ $value }}')" wire:loading.attr="disabled"
+                            wire:target="setStatus"
                             aria-pressed="{{ $this->activeStatus() === $value ? 'true' : 'false' }}"
                             class="ws-filter {{ $this->activeStatus() === $value ? 'is-active' : '' }}">
                             {{ $label }}
                         </button>
                     @endforeach
-                </nav>
+                    <span class="sr-only" role="status" wire:loading wire:target="setStatus">Memuat riwayat setoran.</span>
+                </div>
             </div>
 
-            <div class="ws-card-list">
+            <div class="ws-card-list" wire:loading.attr="aria-busy" wire:target="setStatus">
                 @forelse ($deposits as $deposit)
                     <article class="ws-transaction-card" aria-label="Setoran {{ $this->formatDate($deposit->deposit_date) }}">
                         <div class="ws-date-box">
@@ -110,7 +112,7 @@
             </div>
 
             @if ($deposits->hasPages())
-                <nav aria-label="Pagination riwayat setoran" class="ws-pagination">{{ $deposits->links() }}</nav>
+                <div class="ws-pagination">{{ $deposits->links(data: ['scrollTo' => '#deposit-list-heading']) }}</div>
             @endif
         </section>
 

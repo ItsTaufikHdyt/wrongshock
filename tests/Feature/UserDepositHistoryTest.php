@@ -152,6 +152,36 @@ class UserDepositHistoryTest extends TestCase
         $this->assertSame($before, $this->financialState());
     }
 
+    public function test_long_transaction_content_remains_available_in_history_and_detail(): void
+    {
+        $user = $this->createUser('user');
+        $longName = str_repeat('Kemasan Plastik Campuran Dengan Nama Panjang ', 5);
+        $longReason = str_repeat('Catatan koreksi penimbangan yang perlu dijelaskan kepada anggota. ', 6);
+        $deposit = $this->createDeposit(
+            $user,
+            '2026-09-21',
+            'cancelled',
+            $longName,
+            unitPrice: 3000000,
+            quantity: '999999.999',
+            subtotal: 9999999999,
+            cancellationReason: $longReason,
+        );
+
+        $history = $this->actingAs($user)->get('/user/setoran');
+        $detail = $this->actingAs($user)->get('/user/setoran/'.$deposit->id);
+
+        $history->assertOk()
+            ->assertSee($longName)
+            ->assertSee($longReason)
+            ->assertSee('Rp9.999.999.999');
+        $detail->assertOk()
+            ->assertSee($longName)
+            ->assertSee($longReason)
+            ->assertSee('999999.999 Kg')
+            ->assertSee('Rp9.999.999.999');
+    }
+
     /** @return array<string, int> */
     private function financialState(): array
     {

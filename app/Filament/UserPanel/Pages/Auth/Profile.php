@@ -54,7 +54,6 @@ class Profile extends EditProfile
                     Section::make('Informasi Pribadi')
                         ->description('Informasi utama yang digunakan pada akun Anda.')
                         ->icon('heroicon-o-user-circle')
-                        ->extraAttributes(['class' => 'ws-profile-card'])
                         ->schema([
                             $this->getNameFormComponent()->label('Nama Lengkap'),
                             $this->getEmailFormComponent()->label('Email'),
@@ -66,7 +65,6 @@ class Profile extends EditProfile
                     Section::make('Alamat')
                         ->description('Pastikan wilayah dan alamat lengkap Anda sesuai.')
                         ->icon('heroicon-o-map-pin')
-                        ->extraAttributes(['class' => 'ws-profile-card'])
                         ->schema([
                             Select::make('district_id')
                                 ->label('Kecamatan')
@@ -97,7 +95,6 @@ class Profile extends EditProfile
             Section::make('Keamanan Akun')
                 ->description('Kosongkan jika Anda tidak ingin mengubah password.')
                 ->icon('heroicon-o-lock-closed')
-                ->extraAttributes(['class' => 'ws-profile-card ws-profile-security'])
                 ->schema([
                     $this->getPasswordFormComponent()->label('Password Baru'),
                     $this->getPasswordConfirmationFormComponent()->label('Konfirmasi Password Baru'),

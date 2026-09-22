@@ -131,6 +131,22 @@ class UserDashboardTest extends TestCase
             ->assertDontSee('Setoran 1');
     }
 
+    public function test_dashboard_renders_long_identity_and_large_balance_without_losing_information(): void
+    {
+        $user = $this->createUser('user', balance: 9999999999);
+        $user->forceFill([
+            'name' => str_repeat('Nama Pengguna Sangat Panjang ', 5),
+            'number' => 'ANGGOTA-'.str_repeat('1234567890', 5),
+        ])->save();
+
+        $response = $this->actingAs($user)->get('/user/user-dashboard');
+
+        $response->assertOk()
+            ->assertSee($user->name)
+            ->assertSee('Anggota #'.$user->number)
+            ->assertSee('Rp9.999.999.999');
+    }
+
     /** @return array<string, int> */
     private function financialState(): array
     {

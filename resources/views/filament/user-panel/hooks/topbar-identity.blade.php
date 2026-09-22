@@ -11,7 +11,7 @@
 @if ($user)
     <div class="ws-topbar-identity">
         @if ($hasImage)
-            <img src="{{ Storage::disk('public')->url($user->image) }}" alt="Foto profil {{ $user->name }}" class="ws-topbar-avatar">
+            <img src="{{ Storage::disk('public')->url($user->image) }}" alt="" aria-hidden="true" class="ws-topbar-avatar">
         @else
             <span class="ws-topbar-avatar" aria-hidden="true">{{ $initials ?: '?' }}</span>
         @endif

@@ -2,7 +2,7 @@
 
 ## Overall
 
-**Current status: P1.6 COMPLETE / M8 COMPLETE**
+**Current status: P1 USER UI/UX REDESIGN COMPLETE / M8 COMPLETE**
 
 This document tracks implementation against `prd.md`. It must be updated
 after every meaningful coding session.
@@ -263,6 +263,13 @@ shell CSS is loaded only by `userPanel`, so the admin panel is unaffected. No
 domain service, authorization, financial semantics, schema, or persisted data
 was changed.
 
+### P1.5 --- User Withdrawal UX
+
+Status: DEFERRED. A member-initiated withdrawal flow would be a new product
+capability rather than a redesign of an existing user journey. The approved P1
+scope remains read-only for balances and financial history; existing backend
+withdrawal behavior is unchanged.
+
 ### P1.6 --- User Profile Redesign
 
 Status: COMPLETE. Replaced the user panel's one-record CRUD resource with a
@@ -274,6 +281,28 @@ financial fields. Profile photos use the public disk under a per-user directory
 with JPEG/PNG/WebP and 2 MB limits; owned replaced files are removed after
 commit while legacy paths are preserved safely. No financial data, domain
 service, schema, or admin panel was changed.
+
+### P1.7 --- Mobile, Responsive & Accessibility Polish
+
+Status: COMPLETE. Preserved the approved
+P1.4.2/P1.6 design while hardening mobile wrapping, tablet topbar constraints,
+large financial values, long identity/transaction content, filter loading and
+wrapping, pagination semantics, keyboard focus, coarse-pointer touch targets,
+decorative pointer behavior, and reduced motion. Source-level accessibility and
+regression checks are complete. Developer manual browser QA passed for desktop,
+390px mobile, and the 320px overflow check without regressions to the approved
+visual design.
+
+### P1.8 --- Final User UI QA
+
+Status: COMPLETE. The complete Login -> Beranda -> Riwayat Setoran -> Detail
+Setoran -> Profil -> Logout journey was audited for routing, ownership, data
+truth, snapshots, empty/error states, responsive content, accessibility, and
+admin isolation. User login copy and failure feedback are now Indonesian.
+Obsolete user-panel resource discovery, inert CSS/view hooks, and four
+unreferenced legacy image assets were removed. Full regression, dependency
+audit, route audit, Blade compilation, formatting, reconciliation, and
+financial baseline checks pass without changing financial or admin behavior.
 
 ## Critical Rules During Implementation
 
@@ -312,6 +341,70 @@ service, schema, or admin panel was changed.
 ## Session Log
 
 Add entries in reverse chronological order.
+
+### 2026-09-22 — P1.8 Final User UI QA
+
+- Audited the complete authenticated member journey, canonical routes,
+  user-owned query boundaries, snapshot-first transaction rendering, status and
+  Rupiah formatting, empty/error states, profile write allow-list, responsive
+  source safeguards, keyboard/touch semantics, and user-panel CSS isolation.
+- Added a user-panel-specific login page with Indonesian heading, labels,
+  remember action, submit action, failed-authentication message, and
+  rate-limit feedback. The admin login remains on the existing shared page.
+- Removed obsolete user-panel resource discovery, an inert legacy profile-route
+  title condition, unused view/CSS hooks, and four unreferenced assets under
+  `public/assets/image`. Intentional authenticated legacy profile redirects
+  remain for compatibility.
+- Route audit confirms one canonical Beranda, Riwayat Setoran, Detail Setoran,
+  and Profil destination with no user-facing CRUD resource or duplicate default
+  dashboard.
+- Verification: Blade cache compiled, Pint passed, `git diff --check` passed,
+  full regression passed with 102 tests and 478 assertions, and Composer audit
+  reported 0 advisories.
+- Development financial baseline remained unchanged at 2 users, cached and
+  ledger net 2,017,800, 5 ledger entries including 2 opening balances, 2
+  deposits, 4 deposit items, and 0 withdrawals. Reconciliation remained 2
+  MATCH and 0 MISMATCH.
+- P1.5 member withdrawal UX remains deliberately deferred because it is a new
+  product capability. No financial service, schema, ledger semantics, persisted
+  financial data, or admin panel implementation changed.
+- Prior P1.7 manual browser QA remains passed for desktop, 390px, and 320px.
+  Browser automation was unavailable for a new visual smoke check of the
+  login-copy-only P1.8 change; HTTP rendering and journey regressions pass.
+
+### 2026-09-21 — P1.7 Manual Browser QA Confirmation
+
+- Developer manual QA passed on desktop for Login, Beranda, Riwayat Setoran,
+  Detail Setoran, and Profil.
+- Mobile QA passed at 390px, including drawer/navigation, hero, balance, quick
+  actions, filters, transaction cards, pagination, detail, profile upload and
+  preview, save/validation behavior, focus visibility, and page overflow.
+- The 320px overflow check passed, and the approved P1.4.2/P1.6 visual language
+  remained intact. No implementation changes were required.
+- P1.7 status is COMPLETE and ready for P1.8 Final User UI QA.
+
+### 2026-09-21 — P1.7 Mobile, Responsive & Accessibility Polish
+
+- Kept the approved visual composition and corrected narrow-screen wrapping for
+  long names, member numbers, balances, transaction values, profile identity,
+  and cancellation messages without blanket overflow suppression.
+- Made mobile filters wrap, constrained tablet topbar identity, increased key
+  coarse-pointer targets to approximately 44px, and strengthened keyboard focus
+  indicators using the approved green palette.
+- Corrected filter and pagination semantics, added filter loading announcement
+  and busy state, retained pagination with deposit-list scroll targeting, and
+  removed low-value unnamed article landmarks.
+- Expanded reduced-motion handling and prevented decorative leaves from
+  intercepting pointer input.
+- Added render regressions for long identity, `Rp9.999.999.999`, long waste
+  names, large quantity/value, and long cancellation reasons.
+- Focused user regression: 28 tests passed, 175 assertions. Full regression:
+  100 tests passed, 468 assertions. Composer audit: 0 advisories.
+- Development financial baseline remained unchanged at 2 users, cached and
+  ledger net 2,017,800, 5 ledger entries, 2 deposits, 4 deposit items, and 0
+  withdrawals; reconciliation remained 2 MATCH and 0 MISMATCH.
+- Subsequent developer manual browser QA passed at desktop, 390px, and 320px;
+  see the confirmation entry above.
 
 ### 2026-09-21 — P1.6 User Profile Redesign
 

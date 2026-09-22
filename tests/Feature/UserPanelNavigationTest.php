@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Filament\UserPanel\Pages\Auth\Login as UserLogin;
 use App\Filament\UserPanel\Pages\UserDashboard;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -45,6 +47,43 @@ class UserPanelNavigationTest extends TestCase
         $admin = $this->createUser('admin');
 
         $this->actingAs($admin)->get('/user')->assertForbidden();
+    }
+
+    public function test_user_login_uses_member_facing_copy_without_changing_admin_login(): void
+    {
+        $this->get('/user/login')
+            ->assertOk()
+            ->assertSee('Masuk ke akun Wrongshock')
+            ->assertSee('Ingat saya')
+            ->assertSee('Masuk');
+
+        $this->get('/admin/login')
+            ->assertOk()
+            ->assertDontSee('Masuk ke akun Wrongshock');
+    }
+
+    public function test_user_login_validation_and_logout_complete_the_member_journey(): void
+    {
+        $user = $this->createUser('user');
+        $login = new class extends UserLogin
+        {
+            public function failAuthentication(): never
+            {
+                $this->throwFailureValidationException();
+            }
+        };
+
+        try {
+            $login->failAuthentication();
+        } catch (ValidationException $exception) {
+            $this->assertSame('Email atau password tidak sesuai.', $exception->errors()['data.email'][0]);
+        }
+
+        $this->actingAs($user);
+        $this->withSession(['_token' => 'test-token'])
+            ->post('/user/logout', ['_token' => 'test-token'])
+            ->assertRedirect('/user/login');
+        $this->assertGuest();
     }
 
     /** @return array<string, int> */

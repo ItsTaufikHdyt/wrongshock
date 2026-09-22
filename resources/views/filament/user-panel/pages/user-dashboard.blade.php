@@ -59,7 +59,7 @@
 
             <div class="ws-card-list">
                 @forelse ($deposits as $deposit)
-                    <article class="ws-transaction-card ws-transaction-card-compact" aria-label="Setoran {{ $this->formatDate($deposit->deposit_date) }}">
+                    <article class="ws-transaction-card" aria-label="Setoran {{ $this->formatDate($deposit->deposit_date) }}">
                         <div class="ws-date-box">
                             <x-filament::icon icon="heroicon-o-calendar-days" aria-hidden="true" />
                             <time datetime="{{ $deposit->deposit_date->toDateString() }}">{{ $this->formatDate($deposit->deposit_date) }}</time>

@@ -35,6 +35,10 @@ class UserProfileTest extends TestCase
             ->assertSee('Profil Saya')
             ->assertSee('Informasi Pribadi')
             ->assertSee('Keamanan Akun')
+            ->assertSee('Nama Lengkap')
+            ->assertSee('Alamat Lengkap')
+            ->assertSee('Upload Foto')
+            ->assertSee('Simpan Perubahan')
             ->assertDontSee('Edit User')
             ->assertDontSee('Create User')
             ->assertDontSee('Delete');

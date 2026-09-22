@@ -2,7 +2,7 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\Pages\Auth\Login as CustomLogin;
+use App\Filament\UserPanel\Pages\Auth\Login as CustomLogin;
 use App\Filament\UserPanel\Pages\Auth\Profile;
 use App\Filament\UserPanel\Pages\UserDashboard;
 use App\Http\Middleware\EnsureActiveUser;
@@ -56,7 +56,6 @@ class UserPanelPanelProvider extends PanelProvider
                 PanelsRenderHook::SIDEBAR_FOOTER,
                 fn () => view('filament.user-panel.hooks.sidebar-footer'),
             )
-            ->discoverResources(in: app_path('Filament/UserPanel/Resources'), for: 'App\\Filament\\UserPanel\\Resources')
             ->discoverPages(in: app_path('Filament/UserPanel/Pages'), for: 'App\\Filament\\UserPanel\\Pages')
             ->pages([
                 UserDashboard::class,

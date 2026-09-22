@@ -1,5 +1,5 @@
 <x-filament::page>
-    <div class="ws-page ws-detail-page">
+    <div class="ws-page">
         <a href="{{ \App\Filament\UserPanel\Pages\DepositHistory::getUrl(panel: 'userPanel') }}" class="ws-back-link">
             <x-filament::icon icon="heroicon-o-arrow-left" aria-hidden="true" /> Kembali ke Riwayat Setoran
         </a>
@@ -30,7 +30,7 @@
             </div>
             <div class="ws-item-list ws-detail-item-list">
                 @forelse ($deposit->items as $item)
-                    <article class="ws-item-row">
+                    <div class="ws-item-row">
                         <span class="ws-item-icon" aria-hidden="true"><x-filament::icon icon="heroicon-o-arrow-path-rounded-square" /></span>
                         <div class="ws-item-copy">
                             <strong>{{ $this->itemName($item) }}</strong>
@@ -42,7 +42,7 @@
                             </span>
                         </div>
                         <strong class="ws-item-value">{{ $this->formatRupiah($item->subtotal) }}</strong>
-                    </article>
+                    </div>
                 @empty
                     <p class="ws-empty-copy">Detail item setoran belum tersedia.</p>
                 @endforelse

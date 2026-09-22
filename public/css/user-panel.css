@@ -18,10 +18,6 @@
     gap: 0;
 }
 
-.fi-panel-userPanel .fi-page-header {
-    display: none;
-}
-
 .fi-panel-userPanel .fi-sidebar {
     background: #fff;
     border-right: 1px solid #e7eee9;
@@ -179,9 +175,13 @@
 }
 
 .ws-topbar-identity span {
+    max-width: 12rem;
+    overflow: hidden;
     margin-top: .1rem;
     color: #66756c;
     font-size: .7rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .ws-sidebar-eco {
@@ -275,6 +275,7 @@
     font-weight: 800;
     line-height: 1.08;
     letter-spacing: -.035em;
+    overflow-wrap: anywhere;
 }
 
 .ws-hero-copy > p {
@@ -291,6 +292,8 @@
     color: #176b4a;
     font-size: .75rem;
     font-weight: 700;
+    max-width: 100%;
+    overflow-wrap: anywhere;
 }
 
 .ws-hero-illustration {
@@ -369,11 +372,34 @@
     font-size: .8rem;
 }
 
+.ws-balance-content > div,
+.ws-profile-identity > div,
+.ws-cancelled-note > p,
+.ws-cancelled-note > div,
+.ws-transaction-body,
+.ws-topbar-title,
+.ws-topbar-identity > div,
+.ws-summary-card > div,
+.ws-eco-banner-copy > div,
+.ws-detail-summary p {
+    min-width: 0;
+}
+
+.ws-balance-content strong,
+.ws-profile-identity h2,
+.ws-profile-identity p,
+.ws-cancelled-note p,
+.ws-detail-total strong,
+.ws-transaction-total strong {
+    overflow-wrap: anywhere;
+}
+
 .ws-balance-leaf {
     position: absolute;
     border-radius: 100% 0 100% 0;
     background: rgba(221, 244, 231, .13);
     transform: rotate(28deg);
+    pointer-events: none;
 }
 
 .ws-balance-leaf-one {
@@ -456,17 +482,6 @@
     background: #f7faf8;
     box-shadow: 0 5px 14px rgba(23, 107, 74, .07);
     transform: translateY(-1px);
-}
-
-.ws-action-card:focus-visible,
-.ws-text-link:focus-visible,
-.ws-detail-button:focus-visible,
-.ws-primary-button:focus-visible,
-.ws-secondary-button:focus-visible,
-.ws-back-link:focus-visible,
-.ws-filter:focus-visible {
-    outline: 3px solid rgba(47, 125, 90, .3);
-    outline-offset: 2px;
 }
 
 .ws-action-card strong,
@@ -908,6 +923,11 @@
     color: #fff;
 }
 
+.ws-filter:disabled {
+    cursor: wait;
+    opacity: .6;
+}
+
 .ws-pagination {
     margin-top: 1rem;
     overflow-x: auto;
@@ -997,6 +1017,7 @@
     border-radius: 100% 0 100% 0;
     background: rgba(47, 125, 90, .08);
     transform: rotate(38deg);
+    pointer-events: none;
 }
 
 .ws-eco-banner-leaf-one {
@@ -1213,7 +1234,7 @@
     }
 
     .ws-balance-content strong {
-        font-size: 1.85rem;
+        font-size: clamp(1.4rem, 7.2vw, 1.85rem);
     }
 
     .ws-action-grid {
@@ -1233,12 +1254,11 @@
 
     .ws-history-heading .ws-filter-group {
         width: 100%;
-        overflow-x: auto;
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
     }
 
     .ws-filter {
-        flex: 1 0 auto;
+        flex: 1 1 auto;
     }
 
     .ws-summary-card {
@@ -1368,6 +1388,7 @@
     position: absolute;
     border-radius: 100% 0 100% 0;
     background: rgba(47, 125, 90, .1);
+    pointer-events: none;
 }
 
 .ws-profile-intro-leaf-one {
@@ -1513,6 +1534,14 @@
 
 .ws-profile-page .fi-fo-field-wrp-error-message {
     color: #a72838;
+    overflow-wrap: anywhere;
+}
+
+.ws-profile-page .fi-fo-file-upload,
+.ws-profile-page .fi-fo-field-wrp,
+.ws-profile-page .fi-input-wrp {
+    min-width: 0;
+    max-width: 100%;
 }
 
 .ws-profile-page .fi-fo-placeholder {
@@ -1548,6 +1577,30 @@
 
 .ws-profile-save.fi-btn:hover {
     background: #176b4a;
+}
+
+.ws-action-card:focus-visible,
+.ws-text-link:focus-visible,
+.ws-detail-button:focus-visible,
+.ws-primary-button:focus-visible,
+.ws-secondary-button:focus-visible,
+.ws-back-link:focus-visible,
+.ws-filter:focus-visible,
+.ws-profile-save.fi-btn:focus-visible,
+.fi-panel-userPanel .fi-sidebar-item-button:focus-visible {
+    outline: 3px solid #2f7d5a;
+    outline-offset: 2px;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+    .ws-topbar-title span,
+    .ws-topbar-identity span {
+        display: none;
+    }
+
+    .ws-topbar-identity strong {
+        max-width: 8rem;
+    }
 }
 
 @media (max-width: 767px) {
@@ -1610,10 +1663,23 @@
     }
 }
 
+@media (pointer: coarse) {
+    .ws-filter,
+    .ws-detail-button,
+    .ws-secondary-button,
+    .ws-primary-button,
+    .ws-pagination a,
+    .ws-pagination button {
+        min-height: 2.75rem;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .fi-panel-userPanel *,
     .fi-panel-userPanel *::before,
     .fi-panel-userPanel *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
         scroll-behavior: auto !important;
         transition-duration: .01ms !important;
     }

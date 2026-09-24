@@ -3,13 +3,16 @@
 namespace Tests\Feature;
 
 use App\Filament\Resources\WasteBankResource;
+use App\Filament\Resources\WasteBankResource\Pages\EditWasteBank;
 use App\Filament\Resources\WasteBankStaffResource;
 use App\Models\User;
 use App\Models\WasteBank;
 use App\Services\AdminMembershipService;
+use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -24,8 +27,8 @@ class RolesAndBankAdministrationTest extends TestCase
         $this->assignDefaultWasteBank($bankAdmin);
         $unassigned = $this->user('admin');
         $ambiguous = $this->user('admin');
-        $ambiguous->wasteBanks()->attach(WasteBank::factory()->create(['code' => 'BS100']));
-        $ambiguous->wasteBanks()->attach(WasteBank::factory()->create(['code' => 'BS101']));
+        $ambiguous->wasteBanksAsStaff()->attach(WasteBank::factory()->create(['code' => 'BS100']));
+        $ambiguous->wasteBanksAsStaff()->attach(WasteBank::factory()->create(['code' => 'BS101']));
 
         $panel = \Filament\Facades\Filament::getPanel('adminPanel');
         $this->assertTrue($super->canAccessPanel($panel));
@@ -79,6 +82,79 @@ class RolesAndBankAdministrationTest extends TestCase
         ]);
     }
 
+    public function test_super_admin_sees_and_can_submit_waste_bank_create_page(): void
+    {
+        $super = $this->user('super_admin');
+        [$district, $subDistrict] = $this->region('create');
+
+        $this->actingAs($super)
+            ->get(WasteBankResource::getUrl('index', panel: 'adminPanel'))
+            ->assertOk()
+            ->assertSee('Tambah Bank Sampah');
+
+        $this->actingAs($super)
+            ->get(WasteBankResource::getUrl('create', panel: 'adminPanel'))
+            ->assertOk();
+
+        Filament::setCurrentPanel(Filament::getPanel('adminPanel'));
+        Livewire::test(\App\Filament\Resources\WasteBankResource\Pages\CreateWasteBank::class)
+            ->set('data.code', 'bs002')
+            ->set('data.name', 'Bank Baru')
+            ->set('data.district_id', $district)
+            ->set('data.sub_district_id', $subDistrict)
+            ->set('data.status', true)
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $this->assertDatabaseHas('waste_banks', [
+            'code' => 'BS002',
+            'name' => 'Bank Baru',
+        ]);
+        $this->assertDatabaseMissing('waste_bank_staff', [
+            'waste_bank_id' => WasteBank::where('code', 'BS002')->value('id'),
+        ]);
+    }
+
+    public function test_editing_bank_data_preserves_all_staff_assignments_and_has_no_admin_field(): void
+    {
+        $super = $this->user('super_admin');
+        [$district, $subDistrict] = $this->region('edit');
+        $bank = WasteBank::create([
+            'code' => 'BS003',
+            'name' => 'Bank Edit',
+            'district_id' => $district,
+            'sub_district_id' => $subDistrict,
+            'status' => true,
+        ]);
+        $admins = [$this->user('admin'), $this->user('admin'), $this->user('admin')];
+        foreach ($admins as $admin) {
+            app(AdminMembershipService::class)->assignBankAdmin($super, $admin, $bank);
+        }
+
+        Filament::setCurrentPanel(Filament::getPanel('adminPanel'));
+        $this->actingAs($super);
+
+        $component = Livewire::test(EditWasteBank::class, ['record' => $bank->getRouteKey()])
+            ->set('data.name', 'Bank Edit Updated')
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertFalse(array_key_exists('admin_user_id', $component->get('data')));
+        $this->assertSame(3, $bank->staffAssignments()->count());
+        $this->assertSame('Bank Edit Updated', $bank->refresh()->name);
+    }
+
+    public function test_bank_admin_cannot_create_bank_from_platform_resource(): void
+    {
+        $admin = $this->user('admin');
+        $bank = WasteBank::factory()->create(['code' => 'BS003']);
+        $admin->wasteBanksAsStaff()->attach($bank);
+
+        $this->actingAs($admin)
+            ->get(WasteBankResource::getUrl('create', panel: 'adminPanel'))
+            ->assertForbidden();
+    }
+
     public function test_bank_admin_assignment_is_transactional_and_unique(): void
     {
         $super = $this->user('super_admin');
@@ -91,6 +167,23 @@ class RolesAndBankAdministrationTest extends TestCase
 
         $this->expectException(ValidationException::class);
         app(AdminMembershipService::class)->assignBankAdmin($super, $admin, $bank);
+    }
+
+    public function test_one_bank_can_have_many_admins_but_one_admin_cannot_have_two_active_banks(): void
+    {
+        $super = $this->user('super_admin');
+        $bankA = WasteBank::factory()->create(['code' => 'BS100']);
+        $bankB = WasteBank::factory()->create(['code' => 'BS101']);
+        $admins = [$this->user('admin'), $this->user('admin'), $this->user('admin')];
+
+        foreach ($admins as $admin) {
+            app(AdminMembershipService::class)->assignBankAdmin($super, $admin, $bankA);
+        }
+
+        $this->assertCount(3, $bankA->staffAssignments()->get());
+
+        $this->expectException(ValidationException::class);
+        app(AdminMembershipService::class)->assignBankAdmin($super, $admins[0], $bankB);
     }
 
     public function test_bank_admin_cannot_assign_or_modify_global_master_data(): void
@@ -115,11 +208,11 @@ class RolesAndBankAdministrationTest extends TestCase
 
         app(AdminMembershipService::class)->promoteToBankAdmin($super, $citizen, $bank);
         $this->assertTrue($citizen->refresh()->isBankAdmin());
-        $this->assertCount(1, $citizen->wasteBanks);
+        $this->assertCount(1, $citizen->wasteBanksAsStaff);
 
         app(AdminMembershipService::class)->promoteToSuperAdmin($super, $citizen);
         $this->assertTrue($citizen->refresh()->isPlatformAdmin());
-        $this->assertCount(0, $citizen->wasteBanks);
+        $this->assertCount(0, $citizen->wasteBanksAsStaff);
 
         app(AdminMembershipService::class)->demoteToCitizen($super, $citizen);
         $this->assertTrue($citizen->refresh()->hasRole('user'));

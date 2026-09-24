@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\District as Kecamatan;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DistrictSeeder extends Seeder
@@ -29,7 +28,7 @@ class DistrictSeeder extends Seeder
         ];
 
         foreach ($kec as $key => $kec) {
-            Kecamatan::create($kec);
+            Kecamatan::query()->updateOrCreate(['id' => $kec['id']], ['name' => $kec['name']]);
         }
     }
 }

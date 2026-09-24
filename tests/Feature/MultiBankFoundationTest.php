@@ -168,7 +168,7 @@ class MultiBankFoundationTest extends TestCase
     {
         $admin = $this->citizen(0, $email);
         $admin->assignRole(Role::findOrCreate('admin', 'web'));
-        $admin->wasteBanks()->attach($bank);
+        $admin->wasteBanksAsStaff()->attach($bank);
 
         return $admin->refresh();
     }

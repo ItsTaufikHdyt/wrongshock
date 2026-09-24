@@ -28,7 +28,7 @@ class WasteBankStaff extends Pivot
                 ]);
             }
 
-            if ($user->wasteBanks()->where('status', true)->exists()) {
+            if ($user->wasteBanksAsStaff()->where('status', true)->exists()) {
                 throw ValidationException::withMessages([
                     'user_id' => 'Admin Bank Sampah hanya boleh memiliki satu bank aktif.',
                 ]);

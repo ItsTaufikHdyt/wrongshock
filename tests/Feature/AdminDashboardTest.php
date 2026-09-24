@@ -130,6 +130,14 @@ class AdminDashboardTest extends TestCase
     {
         $admin = $this->createUser('admin');
         $member = $this->createUser('user', 0);
+        DB::table('waste_bank_members')->insert([
+            'user_id' => $member->id,
+            'waste_bank_id' => DB::table('waste_banks')->where('code', 'BS001')->value('id'),
+            'status' => 'active',
+            'joined_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
         DB::table('withdrawals')->insert([
             'user_id' => $member->id,
             'waste_bank_id' => DB::table('waste_banks')->where('code', 'BS001')->value('id'),

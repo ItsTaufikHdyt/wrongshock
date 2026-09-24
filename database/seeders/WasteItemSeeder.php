@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -13,7 +12,7 @@ class WasteItemSeeder extends Seeder
      */
     public function run(): void
     {
-         DB::table('waste_items')->insert([
+        $items = [
             [
                 'category' => 'Daun Kering',
                 'output' => 'Kompos',
@@ -110,6 +109,17 @@ class WasteItemSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-        ]);
+        ];
+
+        foreach ($items as $item) {
+            DB::table('waste_items')->updateOrInsert(
+                [
+                    'category' => $item['category'],
+                    'output' => $item['output'],
+                    'unit' => $item['unit'],
+                ],
+                ['price' => $item['price'], 'updated_at' => now(), 'created_at' => $item['created_at']],
+            );
+        }
     }
 }

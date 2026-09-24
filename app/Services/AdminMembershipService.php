@@ -31,7 +31,7 @@ class AdminMembershipService
                 $this->fail('waste_bank_id', 'Bank Sampah harus aktif.');
             }
 
-            $activeBankIds = $user->wasteBanks()->where('status', true)->pluck('waste_banks.id');
+            $activeBankIds = $user->wasteBanksAsStaff()->where('status', true)->pluck('waste_banks.id');
             if ($activeBankIds->isNotEmpty() && ! $activeBankIds->contains($bank->id)) {
                 $this->fail('user_id', 'Admin Bank Sampah hanya boleh memiliki satu bank aktif.');
             }
@@ -39,6 +39,34 @@ class AdminMembershipService
             if (WasteBankStaff::query()->where('waste_bank_id', $bank->id)->where('user_id', $user->id)->exists()) {
                 $this->fail('user_id', 'Admin sudah terdaftar pada bank ini.');
             }
+
+            return WasteBankStaff::query()->create([
+                'waste_bank_id' => $bank->id,
+                'user_id' => $user->id,
+            ]);
+        });
+    }
+
+    public function createBankAdmin(User $actor, WasteBank $bank, array $attributes): WasteBankStaff
+    {
+        $this->assertSuperAdmin($actor);
+
+        return $this->database->transaction(function () use ($bank, $attributes): WasteBankStaff {
+            if (! $bank->status) {
+                $this->fail('waste_bank_id', 'Bank Sampah harus aktif.');
+            }
+
+            $user = User::query()->create([
+                'name' => $attributes['name'],
+                'number' => $attributes['number'],
+                'email' => $attributes['email'],
+                'password' => $attributes['password'],
+                'district_id' => $attributes['district_id'],
+                'sub_district_id' => $attributes['sub_district_id'],
+                'address' => $attributes['address'] ?? null,
+                'status' => (int) ($attributes['status'] ?? 1),
+            ]);
+            $user->assignRole(Role::findOrCreate('admin', 'web'));
 
             return WasteBankStaff::query()->create([
                 'waste_bank_id' => $bank->id,
@@ -61,7 +89,7 @@ class AdminMembershipService
             $user->assignRole(Role::findOrCreate('super_admin', 'web'));
             $user->removeRole('admin');
             $user->removeRole('user');
-            $user->wasteBanks()->detach();
+            $user->wasteBanksAsStaff()->detach();
 
             return $user->refresh();
         });
@@ -70,6 +98,8 @@ class AdminMembershipService
     public function promoteToBankAdmin(User $actor, User $user, WasteBank $bank): User
     {
         $this->assertSuperAdmin($actor);
+
+        $this->assertNotLastSuperAdmin($user);
 
         return $this->database->transaction(function () use ($actor, $user, $bank): User {
             $user->removeRole('super_admin');
@@ -85,11 +115,13 @@ class AdminMembershipService
     {
         $this->assertSuperAdmin($actor);
 
+        $this->assertNotLastSuperAdmin($user);
+
         return $this->database->transaction(function () use ($user): User {
             $user->removeRole('super_admin');
             $user->removeRole('admin');
             $user->assignRole(Role::findOrCreate('user', 'web'));
-            $user->wasteBanks()->detach();
+            $user->wasteBanksAsStaff()->detach();
 
             return $user->refresh();
         });
@@ -99,6 +131,25 @@ class AdminMembershipService
     {
         if ((int) $actor->status !== 1 || ! $actor->hasRole('super_admin')) {
             throw new AuthorizationException('An active super admin is required.');
+        }
+    }
+
+    private function assertNotLastSuperAdmin(User $user): void
+    {
+        if (! $user->hasRole('super_admin')) {
+            return;
+        }
+
+        $remaining = User::query()
+            ->where('status', 1)
+            ->whereHas('roles', fn ($query) => $query->where('name', 'super_admin'))
+            ->where('id', '!=', $user->id)
+            ->exists();
+
+        if (! $remaining) {
+            throw ValidationException::withMessages([
+                'user_id' => 'Minimal harus ada satu Super Admin aktif.',
+            ]);
         }
     }
 

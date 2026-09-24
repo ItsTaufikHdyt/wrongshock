@@ -3,6 +3,7 @@
 namespace App\Filament\UserPanel\Pages;
 
 use App\Filament\UserPanel\Pages\Auth\Profile;
+use App\Models\WasteBankMember;
 use App\Models\WasteDeposit;
 use Illuminate\Support\Facades\Auth;
 
@@ -22,6 +23,8 @@ class UserDashboard extends UserDepositPage
 
     public $deposits;
 
+    public $memberships;
+
     public function mount(): void
     {
         $this->user = Auth::user();
@@ -30,6 +33,11 @@ class UserDashboard extends UserDepositPage
             ->latest('deposit_date')
             ->latest('id')
             ->take(5)
+            ->get();
+        $this->memberships = WasteBankMember::query()
+            ->with('wasteBank')
+            ->where('user_id', $this->user->id)
+            ->orderByDesc('joined_at')
             ->get();
     }
 
@@ -41,5 +49,10 @@ class UserDashboard extends UserDepositPage
     public function profileUrl(): string
     {
         return Profile::getUrl(panel: 'userPanel');
+    }
+
+    public function membershipsUrl(): string
+    {
+        return Memberships::getUrl(panel: 'userPanel');
     }
 }

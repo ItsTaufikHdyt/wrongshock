@@ -19,7 +19,9 @@ class UserPolicy
     public function view(User $actor, User $user): bool
     {
         return $actor->isPlatformAdmin()
-            || ($actor->isBankAdmin() && $actor->wasteBanks()->whereHas('deposits', fn ($query) => $query->where('user_id', $user->id))->exists())
+            || ($actor->isBankAdmin() && $actor->wasteBanksAsStaff()->whereHas('members', fn ($query) => $query
+                ->whereKey($user->id)
+            )->exists())
             || $actor->is($user);
     }
 
@@ -30,7 +32,7 @@ class UserPolicy
 
     public function create(User $actor): bool
     {
-        return false;
+        return $actor->isPlatformAdmin() || $actor->isBankAdmin();
     }
 
     public function delete(User $actor, User $user): bool

@@ -46,10 +46,9 @@ class AdminDashboard extends Dashboard
 
         $memberQuery = User::query()
             ->whereHas('roles', fn ($query) => $query->where('name', 'user'))
-            ->where(function ($query) use ($wasteBank): void {
-                $query->whereHas('wasteDeposits', fn ($depositQuery) => $depositQuery->where('waste_bank_id', $wasteBank->id))
-                    ->orWhereHas('withdrawals', fn ($withdrawalQuery) => $withdrawalQuery->where('waste_bank_id', $wasteBank->id));
-            });
+            ->whereHas('bankMemberships', fn ($query) => $query
+                ->where('waste_bank_id', $wasteBank->id)
+                ->where('status', 'active'));
 
         $monthlyDeposits = WasteDeposit::query()
             ->where('waste_bank_id', $wasteBank->id)

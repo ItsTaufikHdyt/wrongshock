@@ -23,7 +23,7 @@ class WasteBankContext
             throw new AuthorizationException('An active admin with a waste bank assignment is required.');
         }
 
-        $banks = $actor->wasteBanks()->where('status', true)->get();
+        $banks = $actor->wasteBanksAsStaff()->where('status', true)->get();
 
         if ($banks->count() !== 1) {
             throw new AuthorizationException('Exactly one active waste bank assignment is required.');

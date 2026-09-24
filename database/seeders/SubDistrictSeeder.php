@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\SubDistrict as Kelurahan;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class SubDistrictSeeder extends Seeder
@@ -13,8 +12,8 @@ class SubDistrictSeeder extends Seeder
      */
     public function run(): void
     {
-         $kel = [
-            //Bontang Barat
+        $kel = [
+            // Bontang Barat
             [
                 'id' => '1',
                 'district_id' => '1',
@@ -30,7 +29,7 @@ class SubDistrictSeeder extends Seeder
                 'district_id' => '1',
                 'name' => 'Telihan',
             ],
-            //Bontang Selatan
+            // Bontang Selatan
             [
                 'id' => '4',
                 'district_id' => '2',
@@ -61,7 +60,7 @@ class SubDistrictSeeder extends Seeder
                 'district_id' => '2',
                 'name' => 'Tanjung Laut Indah',
             ],
-            //Bontang Utara
+            // Bontang Utara
             [
                 'id' => '10',
                 'district_id' => '3',
@@ -95,7 +94,10 @@ class SubDistrictSeeder extends Seeder
         ];
 
         foreach ($kel as $key => $kel) {
-            Kelurahan::create($kel);
+            Kelurahan::query()->updateOrCreate(['id' => $kel['id']], [
+                'district_id' => $kel['district_id'],
+                'name' => $kel['name'],
+            ]);
         }
     }
 }

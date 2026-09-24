@@ -6,6 +6,9 @@ use App\Filament\Resources\UserResource\Pages;
 use App\Models\District;
 use App\Models\SubDistrict;
 use App\Models\User;
+use App\Models\WasteBank;
+use App\Models\WasteBankMember;
+use App\Services\BankMembershipService;
 use App\Services\WasteBankContext;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -14,6 +17,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class UserResource extends Resource
 {
@@ -40,11 +44,21 @@ class UserResource extends Resource
         $bankId = app(WasteBankContext::class)->current()->id;
 
         return parent::getEloquentQuery()
+            ->addSelect([
+                'bank_membership_status' => WasteBankMember::query()
+                    ->select('status')
+                    ->whereColumn('user_id', 'users.id')
+                    ->where('waste_bank_id', $bankId)
+                    ->limit(1),
+                'bank_joined_at' => WasteBankMember::query()
+                    ->select('joined_at')
+                    ->whereColumn('user_id', 'users.id')
+                    ->where('waste_bank_id', $bankId)
+                    ->limit(1),
+            ])
             ->whereHas('roles', fn ($query) => $query->where('name', 'user'))
-            ->where(function ($query) use ($bankId): void {
-                $query->whereHas('wasteDeposits', fn ($depositQuery) => $depositQuery->where('waste_bank_id', $bankId))
-                    ->orWhereHas('withdrawals', fn ($withdrawalQuery) => $withdrawalQuery->where('waste_bank_id', $bankId));
-            });
+            ->whereHas('bankMemberships', fn ($query) => $query
+                ->where('waste_bank_id', $bankId));
     }
 
     public static function form(Form $form): Form
@@ -55,11 +69,12 @@ class UserResource extends Resource
                     Forms\Components\Grid::make(2)
                         ->schema([
                             Forms\Components\TextInput::make('name')
-                                ->label('Nama Anggota')
+                                ->label('Nama Lengkap')
                                 ->required(),
                             Forms\Components\TextInput::make('number')
                                 ->label('Nomor Anggota')
                                 ->required()
+                                ->unique(ignoreRecord: true)
                                 ->disabled(true)
                                 ->default(function () {
 
@@ -71,10 +86,12 @@ class UserResource extends Resource
                                     $tahun = date('Y');
 
                                     // generate angka random 4 digit
-                                    $randomNumber = str_pad(rand(0, 9999), 4, '0', STR_PAD_LEFT);
+                                    do {
+                                        $randomNumber = str_pad(rand(0, 9999), 4, '0', STR_PAD_LEFT);
+                                        $number = $kodeKota.$kodeDistrict.$kodeSubDistrict.$tahun.$randomNumber;
+                                    } while (User::query()->where('number', $number)->exists());
 
-                                    // gabungkan jadi format ID
-                                    return $kodeKota.$kodeDistrict.$kodeSubDistrict.$tahun.$randomNumber;
+                                    return $number;
                                 })
                                 ->dehydrated(), // pastikan tetap dikirim ke database
                         ]),
@@ -82,6 +99,8 @@ class UserResource extends Resource
                     Forms\Components\Grid::make(2)
                         ->schema([
                             Forms\Components\TextInput::make('email')
+                                ->email()
+                                ->unique(ignoreRecord: true)
                                 ->required(),
                             Forms\Components\TextInput::make('password')
                                 ->label('Kata Sandi')
@@ -90,6 +109,12 @@ class UserResource extends Resource
                                 ->nullable()
                                 ->dehydrated(fn ($state) => filled($state))
                                 ->dehydrateStateUsing(fn ($state) => filled($state) ? bcrypt($state) : null),
+                            Forms\Components\TextInput::make('password_confirmation')
+                                ->label('Konfirmasi Kata Sandi')
+                                ->password()
+                                ->required(fn ($livewire) => $livewire instanceof Pages\CreateUser)
+                                ->same('password')
+                                ->dehydrated(false),
                         ]),
 
                     Forms\Components\Grid::make(2)
@@ -98,11 +123,15 @@ class UserResource extends Resource
                                 ->label('Kecamatan')
                                 ->required()
                                 ->options(fn () => District::pluck('name', 'id'))
+                                ->live()
+                                ->afterStateUpdated(fn (Forms\Set $set) => $set('sub_district_id', null))
                                 ->searchable(),
                             Forms\Components\Select::make('sub_district_id')
                                 ->label('Kelurahan')
                                 ->required()
-                                ->reactive()
+                                ->rules(fn (Forms\Get $get) => [
+                                    Rule::exists('sub_districts', 'id')->where('district_id', $get('district_id')),
+                                ])
                                 ->options(
                                     fn ($get) => SubDistrict::where('district_id', $get('district_id'))->pluck('name', 'id')
                                 )
@@ -114,7 +143,6 @@ class UserResource extends Resource
                         ->maxLength(255),
                     Forms\Components\FileUpload::make('image')
                         ->label('Foto Profil')
-                        ->required()
                         ->image(),
                     Forms\Components\Select::make('status')
                         ->label('Status')
@@ -122,8 +150,16 @@ class UserResource extends Resource
                             1 => 'Aktif',
                             0 => 'Nonaktif',
                         ])
-                        ->required()
-                        ->native(false),
+                        ->required(fn ($livewire) => ! $livewire instanceof Pages\CreateUser)
+                        ->native(false)
+                        ->visible(fn ($livewire) => ! $livewire instanceof Pages\CreateUser),
+                    Forms\Components\Select::make('waste_bank_id')
+                        ->label('Bank Sampah')
+                        ->options(fn () => WasteBank::query()->where('status', true)->orderBy('name')->pluck('name', 'id'))
+                        ->visible(fn ($livewire): bool => auth()->user()?->isPlatformAdmin()
+                            && $livewire instanceof Pages\CreateUser)
+                        ->required(fn ($livewire): bool => auth()->user()?->isPlatformAdmin()
+                            && $livewire instanceof Pages\CreateUser),
                 ]),
 
             ]);
@@ -154,6 +190,23 @@ class UserResource extends Resource
                         'success' => 1,   // hijau untuk status = 1
                         'danger' => 0,   // merah untuk status = 0
                     ]),
+                Tables\Columns\TextColumn::make('bank_membership_status')
+                    ->label('Status Keanggotaan')
+                    ->badge()
+                    ->formatStateUsing(fn ($state): string => $state === 'active' ? 'Aktif' : 'Nonaktif')
+                    ->visible(fn (): bool => auth()->user()?->isBankAdmin() ?? false),
+                Tables\Columns\TextColumn::make('bank_joined_at')
+                    ->label('Tanggal Bergabung')
+                    ->date('d M Y')
+                    ->visible(fn (): bool => auth()->user()?->isBankAdmin() ?? false),
+                Tables\Columns\TextColumn::make('membership_summary')
+                    ->label('Keanggotaan')
+                    ->state(fn (User $record): string => $record->bankMemberships()
+                        ->with('wasteBank')
+                        ->get()
+                        ->map(fn (WasteBankMember $membership): string => "{$membership->wasteBank->code} (".($membership->status === 'active' ? 'Aktif' : 'Nonaktif').')')
+                        ->implode(', '))
+                    ->visible(fn (): bool => auth()->user()?->isPlatformAdmin() ?? false),
                 Tables\Columns\TextColumn::make('email')
                     ->label('Email')
                     ->sortable()
@@ -186,14 +239,90 @@ class UserResource extends Resource
             ->searchPlaceholder('Cari anggota...')
             ->actions([
                 Tables\Actions\ViewAction::make()->label('Lihat Detail'),
-                Tables\Actions\EditAction::make()->label('Edit Anggota'),
-                Tables\Actions\DeleteAction::make()->label('Hapus Anggota'),
+                Tables\Actions\EditAction::make()
+                    ->label('Edit Anggota')
+                    ->visible(fn (): bool => auth()->user()?->isPlatformAdmin() ?? false),
+                Tables\Actions\Action::make('nonaktifkanMembership')
+                    ->label('Nonaktifkan Keanggotaan')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->form(fn (User $record): array => self::membershipBankField($record, 'active'))
+                    ->visible(fn (User $record): bool => self::canManageMembership($record, 'active'))
+                    ->action(fn (User $record, array $data): WasteBankMember => app(BankMembershipService::class)
+                        ->deactivateMembership(auth()->user(), $record, self::actionBank($data))),
+                Tables\Actions\Action::make('aktifkanMembership')
+                    ->label('Aktifkan Kembali')
+                    ->color('success')
+                    ->form(fn (User $record): array => self::membershipBankField($record, 'inactive'))
+                    ->visible(fn (User $record): bool => self::canManageMembership($record, 'inactive'))
+                    ->action(fn (User $record, array $data): WasteBankMember => app(BankMembershipService::class)
+                        ->reactivateMembership(auth()->user(), $record, self::actionBank($data))),
+                Tables\Actions\Action::make('tambahMembership')
+                    ->label('Tambah Keanggotaan')
+                    ->visible(fn (): bool => auth()->user()?->isPlatformAdmin() ?? false)
+                    ->form([
+                        Forms\Components\Select::make('waste_bank_id')
+                            ->label('Bank Sampah')
+                            ->options(fn (User $record): array => WasteBank::query()
+                                ->where('status', true)
+                                ->whereDoesntHave('memberMemberships', fn ($query) => $query->where('user_id', $record->id))
+                                ->orderBy('name')
+                                ->pluck('name', 'id')
+                                ->all())
+                            ->required(),
+                    ])
+                    ->action(function (User $record, array $data): void {
+                        app(BankMembershipService::class)->addMember(
+                            auth()->user(),
+                            $record,
+                            WasteBank::query()->findOrFail($data['waste_bank_id']),
+                        );
+                    }),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()->label('Hapus Anggota Terpilih'),
-                ]),
-            ]);
+            ->bulkActions([]);
+    }
+
+    private static function membershipBankField(User $record, string $status): array
+    {
+        return [
+            Forms\Components\Select::make('waste_bank_id')
+                ->label('Bank Sampah')
+                ->options(fn (): array => WasteBankMember::query()
+                    ->where('user_id', $record->id)
+                    ->where('status', $status)
+                    ->with('wasteBank')
+                    ->get()
+                    ->mapWithKeys(fn (WasteBankMember $membership): array => [$membership->waste_bank_id => $membership->wasteBank->name])
+                    ->all())
+                ->visible(fn (): bool => auth()->user()?->isPlatformAdmin() ?? false)
+                ->required(fn (): bool => auth()->user()?->isPlatformAdmin() ?? false),
+        ];
+    }
+
+    private static function actionBank(array $data): ?WasteBank
+    {
+        if (auth()->user()?->isBankAdmin()) {
+            return null;
+        }
+
+        $bankId = $data['waste_bank_id'] ?? null;
+
+        return $bankId ? WasteBank::query()->findOrFail($bankId) : null;
+    }
+
+    private static function canManageMembership(User $record, string $status): bool
+    {
+        $actor = auth()->user();
+        if (! $actor?->isPlatformAdmin() && ! $actor?->isBankAdmin()) {
+            return false;
+        }
+
+        $query = WasteBankMember::query()->where('user_id', $record->id)->where('status', $status);
+        if ($actor->isBankAdmin()) {
+            $query->where('waste_bank_id', app(WasteBankContext::class)->current()->id);
+        }
+
+        return $query->exists();
     }
 
     public static function getRelations(): array

@@ -83,7 +83,7 @@ class User extends Authenticatable implements FilamentUser
         }
 
         return match ($panel->getId()) {
-            'adminPanel' => $this->isPlatformAdmin() || ($this->isBankAdmin() && $this->wasteBanks()->where('status', true)->count() === 1),
+            'adminPanel' => $this->isPlatformAdmin() || ($this->isBankAdmin() && $this->wasteBanksAsStaff()->where('status', true)->count() === 1),
             'userPanel' => $this->hasRole('user') && ! $this->hasAnyRole(['admin', 'super_admin']),
             default => false,
         };
@@ -124,7 +124,24 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(LedgerEntry::class, 'user_id');
     }
 
-    public function wasteBanks()
+    public function bankMemberships()
+    {
+        return $this->hasMany(WasteBankMember::class);
+    }
+
+    public function wasteBanksAsMember()
+    {
+        return $this->belongsToMany(WasteBank::class, 'waste_bank_members')
+            ->withPivot(['joined_at', 'status'])
+            ->withTimestamps();
+    }
+
+    public function staffBankAssignments()
+    {
+        return $this->hasMany(WasteBankStaff::class);
+    }
+
+    public function wasteBanksAsStaff()
     {
         return $this->belongsToMany(WasteBank::class, 'waste_bank_staff')->withTimestamps();
     }

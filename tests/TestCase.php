@@ -15,7 +15,7 @@ abstract class TestCase extends BaseTestCase
             ['name' => 'Test Bank Sampah', 'status' => true]
         );
 
-        $user->wasteBanks()->syncWithoutDetaching([$bank->id]);
+        $user->wasteBanksAsStaff()->syncWithoutDetaching([$bank->id]);
 
         return $bank;
     }

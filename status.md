@@ -2,7 +2,7 @@
 
 ## Overall
 
-**Current status: P2.1B COMPLETE / Admin Sidebar UX Fix COMPLETE / P2.2 NOT STARTED / P1.8 NOT STARTED / M8 COMPLETE**
+**Current status: P2.1B.2 COMPLETE / Admin Sidebar UX Fix COMPLETE / P2.2 NOT STARTED / P1.8 NOT STARTED / M8 COMPLETE**
 
 This document tracks implementation against `prd.md`. It must be updated
 after every meaningful coding session.
@@ -21,11 +21,12 @@ decimal(12,3). - Domain coverage exists for deposit, cancellation, withdrawal,
  reconciliation, and authorization flows. - M8 documentation and cleanup are
  complete.
 
-Current verified development DB: 3 users, cached balance total 2,060,800, 6
-ledger entries, ledger net 2,060,800, 3 deposits, 7 deposit items, and 0
-withdrawals. Reconciliation reports MATCH for all 3 users. P2.1A added one
-legacy bank (`BS001`), one legacy admin assignment, and bank context to all
-existing deposits without changing financial values or ledger rows.
+Current verified development DB: 6 users including three guarded demo users,
+cached balance total 2,060,800, 6 ledger entries, ledger net 2,060,800, 3
+deposits, 7 deposit items, and 0 withdrawals. Reconciliation reports MATCH for
+all 6 users. P2.1A added one legacy bank (`BS001`), one legacy admin
+assignment, and bank context to all existing deposits without changing
+financial values or ledger rows.
 
 ## Milestones
 
@@ -237,6 +238,19 @@ global master-data authorization, and role-aware navigation. Bank admins retain
 bank-scoped deposits, withdrawals, members, and dashboards. Citizen identity,
 global balance, ledger semantics, and global pricing remain unchanged.
 Bank switching, per-bank pricing, and Petugas remain deferred.
+
+### P2.1C --- Multi-Bank Architecture Cleanup
+
+Status: COMPLETE. The canonical model separates platform role, bank staff
+assignment, and citizen membership. One bank may have many admins; one active
+admin assignment may point to only one bank. Citizens may belong to multiple
+banks while retaining one global identity, member number, and legacy global
+balance.
+
+Waste Bank forms edit bank attributes only. Staff assignment is managed through
+the `waste_bank_staff` relation and centralized admin assignment services.
+Per-bank balance is approved for P2.1D but is not implemented in P2.1C; legacy
+global financial behavior remains unchanged until that phase.
 
 ### Admin Sidebar UX Fix --- Expanded Navigation
 
@@ -524,6 +538,77 @@ Add entries in reverse chronological order.
 - Added sidebar configuration/label regression coverage. Focused admin tests
   passed: 8 tests and 31 assertions. No financial service, schema, ledger, or
   balance behavior changed.
+
+### 2026-09-24 — Demo Users & Member Creation Fix
+
+- Root cause: `UserPolicy::create()` unconditionally returned `false`, so
+  Filament hid/denied `Anggota -> Tambah Anggota` even though the resource and
+  create page were registered.
+- Added idempotent `RoleSeeder` and local/testing-only `DemoUserSeeder` for the
+  three documented demo accounts. The bank admin is assigned exactly once to
+  `BS001`; the platform admin and citizen have no bank staff assignment.
+- Member creation now permits active bank/platform admins, forces a new member
+  to the `user` role, active status, and zero balance, and excludes bank,
+  balance, ledger, and role fields from trusted form input. District/subdistrict
+  pairing and password confirmation are validated server-side.
+- Made existing structural seeders safe to rerun. Two normal `db:seed` runs
+  produced 6 users, 3 roles, 1 `BS001` bank, and 1 demo staff assignment.
+- Full regression passed with 159 tests and 848 assertions. Blade cache,
+  targeted Pint, Composer audit, and `git diff --check` passed. Financial
+  values remained unchanged: 2,060,800 cached/net, 6 ledger entries, 3
+  deposits, 7 items, 0 withdrawals, and 6 MATCH / 0 MISMATCH.
+
+### 2026-09-24 — P2.1B.1 Bank Admin & Member Membership Fix
+
+- Audit found three separate causes: the staff resource only selected an
+  existing admin User instead of creating one; bank edit had no admin
+  management surface; and member visibility was based only on bank deposits or
+  withdrawals, while member creation created no bank relationship.
+- Added `waste_bank_members` as the explicit citizen-to-bank relationship,
+  separate from `waste_bank_staff`. Users remain global identities and region
+  fields remain profile attributes, not authorization boundaries.
+- Historical deposit memberships are backfilled idempotently. Demo citizen
+  `user@wrongshock.test` is a member of `BS001`; it is not staff.
+- Bank-admin member creation is transactional and immediately visible through
+  current-bank membership. Exact global member-number lookup can add an
+  existing citizen without exposing a global directory.
+- Super admins can create Bank Admin accounts from the Admin Bank resource and
+  from a Bank Sampah edit page. Creation atomically creates the User, admin
+  role, and one staff assignment; no citizen membership is created.
+- Bank admin member visibility is membership-scoped. Membership status can be
+  deactivated without deleting the global user or financial history. Public
+  registration remains global and does not infer bank membership from region.
+- Full regression passed with 166 tests and 877 assertions. Financial values
+  remained unchanged; two normal seed runs produced no duplicate roles,
+  users, banks, staff assignments, or memberships.
+
+### 2026-09-24 — P2.1B.2 Platform Architecture Completion
+
+- Audit confirmed the test suite is isolated to SQLite `:memory:` while the
+  development runtime uses Docker MySQL. At the start of this phase the live
+  MySQL database contained 5 users, zero ledger/deposit/withdrawal rows, and
+  zero balance. Migration history contained no destructive migration. The
+  earlier documented 3-user / `2,060,800` financial dataset is therefore from
+  a different or reset development database; no automatic restoration was
+  attempted.
+- Added centralized `UserRoleService` for role transitions, required admin
+  bank assignment, preserved memberships, and last-active-Super-Admin
+  protection. Added platform `Pengguna` management for global users.
+- Super Admin can create/edit users, select roles, create banks, assign
+  eligible existing admins, create admins from bank detail, and manage global
+  citizen memberships. Bank Admin retains only current-bank operations.
+- Added user-panel `Keanggotaan Saya` navigation/page and dashboard section.
+  Memberships remain global-citizen relationships and support multiple banks;
+  users cannot self-edit membership.
+- Bank financial create remains unavailable to Super Admin unless an explicit
+  bank-context flow is implemented; Super Admin retains global transaction
+  visibility. No implicit BS001/first-bank resolution was added.
+- After two normal seed runs, the live database contained 8 users, 0 balance,
+  0 ledger entries, 0 deposits, 0 items, 0 withdrawals, 8 MATCH / 0 MISMATCH,
+  1 membership, 2 staff assignments, and 1 bank. No financial values changed.
+- Full regression passed with 170 tests and 893 assertions. Pint, Blade cache,
+  and `git diff --check` passed. Composer audit could not reach Packagist in
+  the final attempt because of a network timeout; no dependencies changed.
 
 ### 2026-09-22 — P2.1A Multi-Bank Architecture Foundation
 

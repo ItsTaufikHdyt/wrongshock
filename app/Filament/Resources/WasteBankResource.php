@@ -10,6 +10,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Validation\Rule;
 
 class WasteBankResource extends Resource
 {
@@ -33,29 +34,40 @@ class WasteBankResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Section::make('Identitas Bank Sampah')->schema([
+            Forms\Components\Section::make('Informasi Bank Sampah')->schema([
                 Forms\Components\TextInput::make('code')
                     ->label('Kode Bank')
                     ->required()
                     ->maxLength(50)
                     ->unique(ignoreRecord: true)
+                    ->dehydrateStateUsing(fn (?string $state): ?string => filled($state) ? strtoupper(trim($state)) : $state)
                     ->disabled(fn (?WasteBank $record): bool => $record?->deposits()->exists() || $record?->withdrawals()->exists()),
                 Forms\Components\TextInput::make('name')
                     ->label('Nama Bank Sampah')
                     ->required()
                     ->maxLength(255),
+            ])->columns(2),
+            Forms\Components\Section::make('Wilayah')->schema([
                 Forms\Components\Select::make('district_id')
                     ->label('Kecamatan')
                     ->relationship('district', 'name')
+                    ->required()
                     ->searchable()
                     ->preload()
-                    ->live(),
+                    ->live()
+                    ->afterStateUpdated(fn (Forms\Set $set): mixed => $set('sub_district_id', null)),
                 Forms\Components\Select::make('sub_district_id')
                     ->label('Kelurahan')
+                    ->required()
                     ->options(fn (Forms\Get $get): array => $get('district_id')
                         ? SubDistrict::query()->where('district_id', $get('district_id'))->orderBy('name')->pluck('name', 'id')->all()
                         : [])
-                    ->searchable(),
+                    ->searchable()
+                    ->rules(fn (Forms\Get $get): array => [
+                        Rule::exists('sub_districts', 'id')->where('district_id', $get('district_id')),
+                    ]),
+            ])->columns(2),
+            Forms\Components\Section::make('Alamat & Lokasi')->schema([
                 Forms\Components\Textarea::make('address')
                     ->label('Alamat')
                     ->rows(3),
@@ -108,7 +120,10 @@ class WasteBankResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            \App\Filament\Resources\WasteBankResource\RelationManagers\AdminsRelationManager::class,
+            \App\Filament\Resources\WasteBankResource\RelationManagers\MembersRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

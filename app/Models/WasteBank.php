@@ -33,6 +33,10 @@ class WasteBank extends Model
     protected static function booted(): void
     {
         static::saving(function (self $bank): void {
+            if (filled($bank->code)) {
+                $bank->code = strtoupper(trim($bank->code));
+            }
+
             if (
                 $bank->district_id !== null
                 && $bank->sub_district_id !== null
@@ -61,6 +65,23 @@ class WasteBank extends Model
     public function staff()
     {
         return $this->belongsToMany(User::class, 'waste_bank_staff')->withTimestamps();
+    }
+
+    public function staffAssignments()
+    {
+        return $this->hasMany(WasteBankStaff::class);
+    }
+
+    public function members()
+    {
+        return $this->belongsToMany(User::class, 'waste_bank_members')
+            ->withPivot(['joined_at', 'status'])
+            ->withTimestamps();
+    }
+
+    public function memberMemberships()
+    {
+        return $this->hasMany(WasteBankMember::class);
     }
 
     public function deposits()

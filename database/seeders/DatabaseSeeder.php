@@ -14,12 +14,17 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
         $this->call([
+            RoleSeeder::class,
             DistrictSeeder::class,
             SubDistrictSeeder::class,
             UserSeeder::class,
             WasteBankSeeder::class,
             WasteItemSeeder::class,
         ]);
+
+        if (app()->environment(['local', 'testing'])) {
+            $this->call(DemoUserSeeder::class);
+        }
         // Contoh: $this->call(AnotherSeeder::class);
     }
 }

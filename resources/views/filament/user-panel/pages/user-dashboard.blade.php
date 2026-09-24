@@ -48,6 +48,33 @@
             </div>
         </section>
 
+        <section class="ws-content-section" aria-labelledby="membership-heading">
+            <div class="ws-section-heading">
+                <div>
+                    <h2 id="membership-heading">Keanggotaan Bank Sampah</h2>
+                    <p>Bank sampah tempat Anda terdaftar.</p>
+                </div>
+                <a href="{{ $this->membershipsUrl() }}" class="ws-text-link">Lihat detail <x-filament::icon icon="heroicon-m-arrow-right" aria-hidden="true" /></a>
+            </div>
+            <div class="ws-card-list">
+                @forelse ($memberships as $membership)
+                    <article class="ws-transaction-card">
+                        <div class="ws-transaction-body">
+                            <div class="ws-transaction-head">
+                                <div>
+                                    <h3>{{ $membership->wasteBank->name }}</h3>
+                                    <p>{{ $membership->wasteBank->code }} · Bergabung {{ $membership->joined_at?->translatedFormat('d F Y') ?: '-' }}</p>
+                                </div>
+                                <span class="ws-status is-success">{{ $membership->status === 'active' ? 'Aktif' : 'Nonaktif' }}</span>
+                            </div>
+                        </div>
+                    </article>
+                @empty
+                    <div class="ws-empty-state"><h3>Belum ada keanggotaan</h3><p>Anda belum terdaftar sebagai anggota Bank Sampah.</p></div>
+                @endforelse
+            </div>
+        </section>
+
         <section id="setoran-terbaru" class="ws-content-section" aria-labelledby="recent-deposits-heading">
             <div class="ws-section-heading">
                 <div>

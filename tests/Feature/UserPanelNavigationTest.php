@@ -3,8 +3,11 @@
 namespace Tests\Feature;
 
 use App\Filament\UserPanel\Pages\Auth\Login as UserLogin;
+use App\Filament\UserPanel\Pages\Memberships;
 use App\Filament\UserPanel\Pages\UserDashboard;
 use App\Models\User;
+use App\Models\WasteBank;
+use App\Models\WasteBankMember;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -40,6 +43,33 @@ class UserPanelNavigationTest extends TestCase
         $user = $this->createUser('user', 0);
 
         $this->actingAs($user)->get('/user')->assertForbidden();
+    }
+
+    public function test_user_can_view_only_own_bank_memberships_with_empty_state(): void
+    {
+        $user = $this->createUser('user');
+        $bank = WasteBank::factory()->create(['code' => 'BS100']);
+        WasteBankMember::create([
+            'waste_bank_id' => $bank->id,
+            'user_id' => $user->id,
+            'joined_at' => now(),
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($user)
+            ->get(Memberships::getUrl(panel: 'userPanel'))
+            ->assertOk()
+            ->assertSee($bank->name)
+            ->assertSee('BS100')
+            ->assertSee('Aktif');
+
+        $other = $this->createUser('user');
+        $otherBank = WasteBank::factory()->create(['code' => 'BS101']);
+        WasteBankMember::create(['waste_bank_id' => $otherBank->id, 'user_id' => $other->id, 'status' => 'active']);
+
+        $this->actingAs($user)
+            ->get(Memberships::getUrl(panel: 'userPanel'))
+            ->assertDontSee($otherBank->name);
     }
 
     public function test_non_user_role_cannot_open_the_user_panel(): void

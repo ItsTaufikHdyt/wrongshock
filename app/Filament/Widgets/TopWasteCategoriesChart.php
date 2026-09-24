@@ -2,20 +2,25 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\WasteItem;
+use App\Services\WasteBankContext;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\DB;
 
 class TopWasteCategoriesChart extends ChartWidget
 {
     protected static ?string $heading = 'Kategori Sampah Terbanyak';
+
     protected static ?int $sort = 1;
 
     protected function getData(): array
     {
-        $data = WasteItem::select('category', DB::raw('SUM(waste_deposit_items.quantity) as total'))
-            ->join('waste_deposit_items', 'waste_items.id', '=', 'waste_deposit_items.waste_item_id')
-            ->groupBy('category')
+        $data = DB::table('waste_deposit_items')
+            ->join('waste_deposits', 'waste_deposit_items.waste_deposit_id', '=', 'waste_deposits.id')
+            ->leftJoin('waste_items', 'waste_deposit_items.waste_item_id', '=', 'waste_items.id')
+            ->selectRaw("COALESCE(waste_deposit_items.category_snapshot, waste_items.category, 'Tanpa kategori') as category, SUM(waste_deposit_items.quantity) as total")
+            ->where('waste_deposits.waste_bank_id', app(WasteBankContext::class)->current()->id)
+            ->where('waste_deposits.status', 'posted')
+            ->groupByRaw("COALESCE(waste_deposit_items.category_snapshot, waste_items.category, 'Tanpa kategori')")
             ->orderByDesc('total')
             ->limit(6)
             ->get();
@@ -38,6 +43,7 @@ class TopWasteCategoriesChart extends ChartWidget
     {
         return 'bar';
     }
+
     protected function getOptions(): array
     {
         return [

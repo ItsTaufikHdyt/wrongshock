@@ -58,6 +58,7 @@ class DepositServiceTest extends TestCase
         ]);
         $this->user->forceFill(['balance' => 0])->save();
         $this->user->assignRole(Role::findOrCreate('admin', 'web'));
+        $this->assignDefaultWasteBank($this->user);
         Auth::login($this->user);
 
         $this->wasteItem = WasteItem::create([
@@ -387,6 +388,7 @@ class DepositServiceTest extends TestCase
         $deposit = new WasteDeposit;
         $deposit->forceFill([
             'user_id' => $this->user->id,
+            'waste_bank_id' => DB::table('waste_banks')->where('code', 'BS001')->value('id'),
             'deposit_date' => '2026-09-21',
             'total_amount' => 6000,
             'status' => 'posted',

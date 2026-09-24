@@ -33,7 +33,7 @@ class AdminPanelPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Green,
             ])
-            ->sidebarCollapsibleOnDesktop()
+            ->sidebarWidth('16.5rem')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
@@ -59,7 +59,7 @@ class AdminPanelPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
                 EnsureActiveUser::class,
-                RoleMiddleware::class.':admin',
+                RoleMiddleware::class.':admin|super_admin',
             ]);
     }
 }

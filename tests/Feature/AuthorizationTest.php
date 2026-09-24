@@ -301,6 +301,9 @@ class AuthorizationTest extends TestCase
         ]);
         $user->forceFill(['balance' => $balance])->save();
         $user->assignRole(Role::findOrCreate($role, 'web'));
+        if ($role === 'admin') {
+            $this->assignDefaultWasteBank($user);
+        }
 
         return $user->refresh();
     }

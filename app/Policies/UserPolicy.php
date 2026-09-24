@@ -8,22 +8,24 @@ class UserPolicy
 {
     public function before(User $actor): ?bool
     {
-        return $actor->hasRole('admin') ? true : null;
+        return null;
     }
 
     public function viewAny(User $actor): bool
     {
-        return $actor->hasRole('user');
+        return $actor->hasRole('user') || $actor->isPlatformAdmin() || $actor->isBankAdmin();
     }
 
     public function view(User $actor, User $user): bool
     {
-        return $actor->is($user);
+        return $actor->isPlatformAdmin()
+            || ($actor->isBankAdmin() && $actor->wasteBanks()->whereHas('deposits', fn ($query) => $query->where('user_id', $user->id))->exists())
+            || $actor->is($user);
     }
 
     public function update(User $actor, User $user): bool
     {
-        return $actor->is($user);
+        return $actor->isPlatformAdmin() || $actor->is($user);
     }
 
     public function create(User $actor): bool

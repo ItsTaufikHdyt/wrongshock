@@ -33,6 +33,10 @@
 .ws-admin-sidebar-note svg { width: 1.15rem; flex: none; }
 .ws-admin-sidebar-note p { color: #748279; font-size: .66rem; line-height: 1.45; }
 .ws-admin-sidebar-note strong { color: #176b4a; }
+.ws-admin-sidebar-context { display: flex; min-width: 0; flex-direction: column; gap: .18rem; margin: 0 .9rem 1rem; padding: .8rem .85rem; border: 1px solid #dce9e0; border-radius: .85rem; background: #f7faf8; }
+.ws-admin-sidebar-context span { color: #7b8c81; font-size: .58rem; font-weight: 800; letter-spacing: .1em; }
+.ws-admin-sidebar-context strong { overflow-wrap: anywhere; color: #176b4a; font-size: .72rem; line-height: 1.3; }
+.ws-admin-sidebar-context small { color: #748279; font-size: .63rem; font-weight: 700; }
 .ws-admin-page { display: flex; flex-direction: column; gap: 1.25rem; }
 .ws-admin-welcome { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.45rem 1.6rem; border: 1px solid #d7e8dc; border-radius: 1rem; background: linear-gradient(110deg,#e8f5ee,#f8fcfa 75%); }
 .ws-admin-eyebrow { color: #21865f; font-size: .66rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }

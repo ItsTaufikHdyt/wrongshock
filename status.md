@@ -1,8 +1,8 @@
-# STATUS --- Wrongshock Core Transaction Stabilization
+# STATUS --- Wrongshock Product Evolution
 
 ## Overall
 
-**Current status: P1.7.4.1 COMPLETE / P1.8 NOT STARTED / M8 COMPLETE**
+**Current status: P2.1B COMPLETE / Admin Sidebar UX Fix COMPLETE / P2.2 NOT STARTED / P1.8 NOT STARTED / M8 COMPLETE**
 
 This document tracks implementation against `prd.md`. It must be updated
 after every meaningful coding session.
@@ -21,10 +21,11 @@ decimal(12,3). - Domain coverage exists for deposit, cancellation, withdrawal,
  reconciliation, and authorization flows. - M8 documentation and cleanup are
  complete.
 
-Current verified development DB: 2 users, cached balance total 2,017,800, 5
-ledger entries, 2 opening-balance entries, ledger net 2,017,800, 2 deposits,
-4 deposit items, and 0 withdrawals. Reconciliation reports MATCH for both
-users.
+Current verified development DB: 3 users, cached balance total 2,060,800, 6
+ledger entries, ledger net 2,060,800, 3 deposits, 7 deposit items, and 0
+withdrawals. Reconciliation reports MATCH for all 3 users. P2.1A added one
+legacy bank (`BS001`), one legacy admin assignment, and bank context to all
+existing deposits without changing financial values or ledger rows.
 
 ## Milestones
 
@@ -206,6 +207,46 @@ frontend dependency limitation, and known risks. The existing code review
 confirmed that the obsolete observer balance mutation and unsafe financial form
 paths were already removed in earlier milestones; no additional cleanup was
 needed.
+
+### P2.1A --- Multi-Bank Architecture Foundation
+
+Status: COMPLETE. Citizens remain global accounts with global cached balances
+and ledger reconciliation. Waste banks and many-to-many staff assignments were
+added; operational deposits, withdrawals, resources, dashboards, policies, and
+services now use the authenticated admin's single active bank assignment.
+Existing transactions were backfilled to the neutral legacy bank `BS001`, and
+the existing admin was assigned to it. The ledger schema and entries were not
+changed. Waste master data and prices remain global by deliberate transition
+design. P2.1B role separation and bank administration are deferred.
+
+P2.1A compatibility coverage passes on MySQL runtime and SQLite in-memory
+tests. New isolation tests cover cross-bank listing, direct URLs, cancellation,
+forged bank IDs, inactive banks, cross-bank citizen history, and withdrawals.
+
+### P2.1B --- Roles & Bank Administration
+
+Status: COMPLETE. Added the `super_admin` platform role while preserving
+`admin` as a bank administrator and `user` as a citizen. The legacy active
+`admin@gmail.com` account was promoted deterministically to `super_admin` and
+removed from bank staff assignments. Super admins have no implicit bank
+context; bank admins require exactly one active bank assignment.
+
+Added platform-only Bank Sampah and Admin Bank Sampah resources, transactional
+admin assignment and role-transition services, platform dashboard metrics,
+global master-data authorization, and role-aware navigation. Bank admins retain
+bank-scoped deposits, withdrawals, members, and dashboards. Citizen identity,
+global balance, ledger semantics, and global pricing remain unchanged.
+Bank switching, per-bank pricing, and Petugas remain deferred.
+
+### Admin Sidebar UX Fix --- Expanded Navigation
+
+Status: COMPLETE. The icon-only desktop behavior was caused by the explicit
+Filament `sidebarCollapsibleOnDesktop()` setting. It was removed in favor of
+Filament's native expanded desktop sidebar, with a supported `16.5rem` width.
+Existing navigation groups, authorization, active states, responsive drawer
+behavior, and approved admin dashboard styling remain intact. Bank admins now
+see a compact non-interactive current-bank context in the sidebar footer;
+platform admins retain the platform context.
 
 ### P1.1 --- User Design Foundation
 
@@ -442,6 +483,75 @@ authorization remain unchanged.
 ## Session Log
 
 Add entries in reverse chronological order.
+
+### 2026-09-24 — P2.1B Roles & Bank Administration
+
+- Re-verified the P2.1A baseline before changes: 3 users, cached balance and
+  ledger net `2,060,800`, 6 ledger entries, 3 deposits, 7 deposit items, 0
+  withdrawals, 3 MATCH, 0 MISMATCH, 1 bank, and 1 staff assignment.
+- Added idempotent `super_admin` role migration. The active legacy account
+  `admin@gmail.com`, already identified by the existing seeded identity and
+  `admin` role, was promoted to `super_admin`; its `admin` role and bank staff
+  assignment were removed. No other account was promoted.
+- Refined `WasteBankContext`: bank admins require exactly one active bank;
+  super admins never resolve to an implicit bank. Added transactional
+  `AdminMembershipService` for bank assignment and user/admin/super-admin
+  transitions.
+- Added platform-only `WasteBankResource` and `WasteBankStaffResource`.
+  Bank deactivation is supported; destructive bank deletion is unavailable.
+  Assignment uniqueness, active-bank validation, and global admin-only
+  management are enforced.
+- Added a platform dashboard labelled `Ringkasan Platform Wrongshock` and
+  role-aware navigation/topbar context. Bank admins retain the existing
+  current-bank dashboard and operational resources.
+- Restricted WasteItem, District, and SubDistrict management to
+  `super_admin`. Bank admins can still use global waste items through the
+  authorized deposit workflow without receiving master-data management UI.
+- Added role, panel, resource, master-data, assignment, transition, platform
+  dashboard, and inactive-account tests. Full regression passed with 154 tests
+  and 811 assertions, 0 failures, and 0 skipped. Financial values and ledger
+  rows remained unchanged.
+
+### 2026-09-24 — Admin Sidebar UX Fix
+
+- Audited the Filament panel and confirmed `sidebarCollapsibleOnDesktop()` was
+  the root cause of the icon-focused desktop state; no custom CSS forced the
+  collapse.
+- Removed desktop collapsibility, set the supported sidebar width to
+  `16.5rem`, and retained Filament's native responsive drawer behavior.
+- Added a compact role-aware sidebar footer context for the current bank or
+  platform administration without adding bank switching.
+- Added sidebar configuration/label regression coverage. Focused admin tests
+  passed: 8 tests and 31 assertions. No financial service, schema, ledger, or
+  balance behavior changed.
+
+### 2026-09-22 — P2.1A Multi-Bank Architecture Foundation
+
+- Added `waste_banks` with stable unique codes, reusable district/subdistrict
+  relations, optional coordinates, and active/inactive lifecycle.
+- Added many-to-many `waste_bank_staff` assignments with duplicate protection.
+  Existing `admin` role semantics remain unchanged; the assignment supplies
+  operational bank context. No bank switcher or new role hierarchy was added.
+- Added a neutral legacy bank `BS001` named `Wrongshock Bank Sampah Utama`.
+  Existing admins were assigned to it, existing deposits and withdrawals were
+  backfilled to it, and all financial IDs, amounts, snapshots, timestamps, and
+  ledger rows were preserved.
+- Added bank ownership to deposits and withdrawals. The ledger remains global
+  and unchanged; `users.balance` remains global and reconciliation remains
+  per-user across all banks.
+- Added `WasteBankContext`, requiring an active admin with exactly one active
+  bank assignment for operational work. Services reject forged cross-bank
+  context and inactive-bank new transactions.
+- Scoped deposit/withdrawal resources, member visibility, dashboards, and
+  operational analytics to the current bank. Citizen dashboards and history
+  remain global to the authenticated citizen and now display bank identity.
+- Added idempotent `WasteBankSeeder`, a `WasteBankFactory`, and focused
+  multi-bank isolation tests. P2.1B role separation, bank administration,
+  per-bank pricing, settlement, switching, and government features remain
+  deferred.
+- Baseline before migration: 3 users, cached balance 2,060,800, 6 ledger
+  entries, ledger net 2,060,800, 3 deposits, 7 items, 0 withdrawals, and
+  3 MATCH / 0 MISMATCH. After migration the values remain identical.
 
 ### 2026-09-22 — P1.7.4.1 Admin UX & Deposit Flow Refinement
 

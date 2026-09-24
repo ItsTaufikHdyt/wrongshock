@@ -3,27 +3,24 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Validation\ValidationException;
-use Filament\Models\Contracts\FilamentUser;
-use Filament\Panel;
 use Spatie\Permission\Traits\HasRoles;
-use App\Models\SubDistrict;
 
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, HasRoles, Notifiable;
 
     /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
      */
-
-
     protected $fillable = [
         'name',
         'number',
@@ -86,12 +83,21 @@ class User extends Authenticatable implements FilamentUser
         }
 
         return match ($panel->getId()) {
-            'adminPanel' => $this->hasRole('admin'),
-            'userPanel' => $this->hasRole('user') && ! $this->hasRole('admin'),
+            'adminPanel' => $this->isPlatformAdmin() || ($this->isBankAdmin() && $this->wasteBanks()->where('status', true)->count() === 1),
+            'userPanel' => $this->hasRole('user') && ! $this->hasAnyRole(['admin', 'super_admin']),
             default => false,
         };
     }
 
+    public function isPlatformAdmin(): bool
+    {
+        return $this->hasRole('super_admin');
+    }
+
+    public function isBankAdmin(): bool
+    {
+        return $this->hasRole('admin') && ! $this->hasRole('super_admin');
+    }
 
     public function district()
     {
@@ -118,4 +124,8 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(LedgerEntry::class, 'user_id');
     }
 
+    public function wasteBanks()
+    {
+        return $this->belongsToMany(WasteBank::class, 'waste_bank_staff')->withTimestamps();
+    }
 }

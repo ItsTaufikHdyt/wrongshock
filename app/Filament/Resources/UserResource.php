@@ -6,6 +6,7 @@ use App\Filament\Resources\UserResource\Pages;
 use App\Models\District;
 use App\Models\SubDistrict;
 use App\Models\User;
+use App\Services\WasteBankContext;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -29,6 +30,22 @@ class UserResource extends Resource
     protected static ?string $pluralLabel = 'Anggota';
 
     protected static ?string $navigationGroup = 'Anggota';
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        if (auth()->user()?->isPlatformAdmin()) {
+            return parent::getEloquentQuery()->whereHas('roles', fn ($query) => $query->where('name', 'user'));
+        }
+
+        $bankId = app(WasteBankContext::class)->current()->id;
+
+        return parent::getEloquentQuery()
+            ->whereHas('roles', fn ($query) => $query->where('name', 'user'))
+            ->where(function ($query) use ($bankId): void {
+                $query->whereHas('wasteDeposits', fn ($depositQuery) => $depositQuery->where('waste_bank_id', $bankId))
+                    ->orWhereHas('withdrawals', fn ($withdrawalQuery) => $withdrawalQuery->where('waste_bank_id', $bankId));
+            });
+    }
 
     public static function form(Form $form): Form
     {
@@ -107,13 +124,6 @@ class UserResource extends Resource
                         ])
                         ->required()
                         ->native(false),
-                    Forms\Components\Select::make('roles')
-                        ->required()
-                        ->label('Peran')
-                        ->relationship('roles', 'name')
-                        ->preload()
-                        ->searchable(),
-
                 ]),
 
             ]);

@@ -156,6 +156,9 @@ class AuthenticationTest extends TestCase
             'status' => $status,
         ]);
         $user->assignRole(Role::findOrCreate($role, 'web'));
+        if ($role === 'admin') {
+            $this->assignDefaultWasteBank($user);
+        }
 
         return $user->refresh();
     }

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -23,7 +24,18 @@ class AdminDashboardTest extends TestCase
             ->assertSee('Selamat datang kembali')
             ->assertSee('Angka Utama')
             ->assertSee('Aktivitas Setoran')
-            ->assertSee('Setoran Terbaru');
+            ->assertSee('Setoran Terbaru')
+            ->assertSee('Anggota')
+            ->assertSee('Setoran')
+            ->assertSee('Penarikan');
+    }
+
+    public function test_admin_sidebar_is_expanded_with_filament_navigation_labels(): void
+    {
+        $panel = Filament::getPanel('adminPanel');
+
+        $this->assertSame('16.5rem', $panel->getSidebarWidth());
+        $this->assertFalse($panel->isSidebarCollapsibleOnDesktop());
     }
 
     public function test_ordinary_inactive_and_revoked_admins_are_denied(): void
@@ -50,7 +62,7 @@ class AdminDashboardTest extends TestCase
         $this->actingAs($admin)
             ->get('/admin')
             ->assertOk()
-            ->assertSee('>2<', false)
+            ->assertSee('>1<', false)
             ->assertSee('Rp 125.000')
             ->assertSee('Rp 900.000')
             ->assertSee('Dibatalkan')
@@ -120,6 +132,7 @@ class AdminDashboardTest extends TestCase
         $member = $this->createUser('user', 0);
         DB::table('withdrawals')->insert([
             'user_id' => $member->id,
+            'waste_bank_id' => DB::table('waste_banks')->where('code', 'BS001')->value('id'),
             'amount' => 10000,
             'status' => 'pending',
             'withdrawal_date' => now()->toDateString(),
@@ -181,6 +194,9 @@ class AdminDashboardTest extends TestCase
             'status' => $status,
         ]);
         $user->assignRole(Role::findOrCreate($role, 'web'));
+        if ($role === 'admin') {
+            $this->assignDefaultWasteBank($user);
+        }
 
         return $user->refresh();
     }
@@ -189,6 +205,7 @@ class AdminDashboardTest extends TestCase
     {
         return DB::table('waste_deposits')->insertGetId([
             'user_id' => $user->id,
+            'waste_bank_id' => DB::table('waste_banks')->where('code', 'BS001')->value('id'),
             'deposit_date' => $date,
             'total_amount' => $amount,
             'status' => $status,

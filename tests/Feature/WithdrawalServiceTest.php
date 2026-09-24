@@ -49,6 +49,7 @@ class WithdrawalServiceTest extends TestCase
         ]);
         $this->user->forceFill(['balance' => 100000])->save();
         $this->user->assignRole(Role::findOrCreate('admin', 'web'));
+        $this->assignDefaultWasteBank($this->user);
         Auth::login($this->user);
     }
 

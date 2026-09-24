@@ -20,6 +20,7 @@ class WasteDeposit extends Model
 
     protected $fillable = [
         'user_id',
+        'waste_bank_id',
         'deposit_date',
     ];
 
@@ -43,6 +44,11 @@ class WasteDeposit extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function wasteBank()
+    {
+        return $this->belongsTo(WasteBank::class);
+    }
+
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -52,5 +58,4 @@ class WasteDeposit extends Model
     {
         return $this->belongsTo(User::class, 'updated_by');
     }
-
 }

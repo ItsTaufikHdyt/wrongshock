@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\WithdrawalResource\Pages;
 use App\Models\User;
 use App\Models\Withdrawal;
+use App\Services\WasteBankContext;
 use App\Services\WithdrawalService;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -29,12 +30,24 @@ class WithdrawalResource extends Resource
 
     protected static ?string $navigationLabel = 'Penarikan';
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        return auth()->user()?->isPlatformAdmin()
+            ? $query
+            : $query->where('waste_bank_id', app(WasteBankContext::class)->current()->id);
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([
             Forms\Components\Select::make('user_id')
                 ->label('Anggota')
-                ->options(fn () => User::query()->orderBy('name')->pluck('name', 'id'))
+                ->options(fn () => User::query()
+                    ->whereHas('wasteDeposits', fn ($query) => $query->where('waste_bank_id', app(WasteBankContext::class)->current()->id))
+                    ->orderBy('name')
+                    ->pluck('name', 'id'))
                 ->searchable()
                 ->required(),
             Forms\Components\TextInput::make('amount')
@@ -57,6 +70,10 @@ class WithdrawalResource extends Resource
                     ->label('Nama Anggota')
                     ->sortable()
                     ->searchable(),
+                Tables\Columns\TextColumn::make('wasteBank.name')
+                    ->label('Bank Sampah')
+                    ->visible(fn (): bool => auth()->user()?->isPlatformAdmin() ?? false)
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('amount')
                     ->label('Jumlah Penarikan')
                     ->money('IDR')
@@ -95,10 +112,10 @@ class WithdrawalResource extends Resource
                     ->color('success')
                     ->icon('heroicon-o-check-circle')
                     ->visible(fn (Withdrawal $record): bool => $record->status === 'pending')
-                    ->authorize(fn (): bool => Auth::user()?->hasRole('admin') ?? false)
+                    ->authorize(fn (): bool => Auth::user()?->isBankAdmin() ?? false)
                     ->requiresConfirmation()
                     ->action(function (Withdrawal $record): void {
-                        abort_unless(Auth::user()?->hasRole('admin'), 403);
+                        abort_unless(Auth::user()?->isBankAdmin(), 403);
 
                         app(WithdrawalService::class)->approve($record, Auth::id());
                     }),
@@ -107,7 +124,7 @@ class WithdrawalResource extends Resource
                     ->color('danger')
                     ->icon('heroicon-o-x-circle')
                     ->visible(fn (Withdrawal $record): bool => $record->status === 'pending')
-                    ->authorize(fn (): bool => Auth::user()?->hasRole('admin') ?? false)
+                    ->authorize(fn (): bool => Auth::user()?->isBankAdmin() ?? false)
                     ->form([
                         Forms\Components\Textarea::make('reason')
                             ->label('Alasan penolakan')
@@ -117,7 +134,7 @@ class WithdrawalResource extends Resource
                     ])
                     ->requiresConfirmation()
                     ->action(function (Withdrawal $record, array $data): void {
-                        abort_unless(Auth::user()?->hasRole('admin'), 403);
+                        abort_unless(Auth::user()?->isBankAdmin(), 403);
 
                         app(WithdrawalService::class)->reject($record, $data['reason'], Auth::id());
                     }),

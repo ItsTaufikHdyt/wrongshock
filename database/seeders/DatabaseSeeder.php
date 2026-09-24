@@ -2,12 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\SubDistrict;
-use Database\Seeders\DistrictSeeder;
-use Database\Seeders\SubDistrictSeeder;;
-use Database\Seeders\UserSeeder;
-use Database\Seeders\WasteItemSeeder;
-
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -23,6 +17,7 @@ class DatabaseSeeder extends Seeder
             DistrictSeeder::class,
             SubDistrictSeeder::class,
             UserSeeder::class,
+            WasteBankSeeder::class,
             WasteItemSeeder::class,
         ]);
         // Contoh: $this->call(AnotherSeeder::class);

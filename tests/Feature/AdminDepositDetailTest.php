@@ -165,6 +165,9 @@ class AdminDepositDetailTest extends TestCase
             'status' => $status,
         ]);
         $user->assignRole(Role::findOrCreate($role, 'web'));
+        if ($role === 'admin') {
+            $this->assignDefaultWasteBank($user);
+        }
 
         return $user->refresh();
     }
@@ -173,6 +176,7 @@ class AdminDepositDetailTest extends TestCase
     {
         return DB::table('waste_deposits')->insertGetId([
             'user_id' => $user->id,
+            'waste_bank_id' => DB::table('waste_banks')->where('code', 'BS001')->value('id'),
             'deposit_date' => now()->toDateString(),
             'total_amount' => $total,
             'status' => $status,

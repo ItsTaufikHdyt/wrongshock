@@ -10,6 +10,7 @@ class Withdrawal extends Model
 
     protected $fillable = [
         'note',
+        'waste_bank_id',
     ];
 
     protected function casts(): array
@@ -32,6 +33,11 @@ class Withdrawal extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function wasteBank()
+    {
+        return $this->belongsTo(WasteBank::class);
     }
 
     public function scopePending($query)

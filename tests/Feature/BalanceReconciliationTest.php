@@ -329,6 +329,7 @@ class BalanceReconciliationTest extends TestCase
 
         $user->forceFill(['balance' => $balance])->save();
         $user->assignRole(Role::findOrCreate('admin', 'web'));
+        $this->assignDefaultWasteBank($user);
 
         return $user;
     }

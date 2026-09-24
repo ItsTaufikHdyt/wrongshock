@@ -8,6 +8,8 @@
         request()->routeIs('filament.adminPanel.resources.districts.*') => 'Kecamatan',
         request()->routeIs('filament.adminPanel.resources.sub-districts.*') => 'Kelurahan',
         request()->routeIs('filament.adminPanel.resources.waste-deposit-items.*') => 'Rincian Setoran',
+        request()->routeIs('filament.adminPanel.resources.waste-banks.*') => 'Bank Sampah',
+        request()->routeIs('filament.adminPanel.resources.waste-bank-staff.*') => 'Admin Bank Sampah',
         default => 'Admin Panel',
     };
 @endphp

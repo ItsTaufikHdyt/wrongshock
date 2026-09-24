@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\WasteDeposit;
 use App\Models\WasteItem;
 use App\Services\DepositService;
+use App\Services\WasteBankContext;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -36,6 +37,15 @@ class WasteDepositResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
 
     protected static ?string $navigationGroup = 'Transaksi';
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        return auth()->user()?->isPlatformAdmin()
+            ? $query
+            : $query->where('waste_bank_id', app(WasteBankContext::class)->current()->id);
+    }
 
     public static function form(Form $form): Form
     {
@@ -131,6 +141,10 @@ class WasteDepositResource extends Resource
                     ->label('Nama Anggota')
                     ->sortable()
                     ->searchable(),
+                Tables\Columns\TextColumn::make('wasteBank.name')
+                    ->label('Bank Sampah')
+                    ->visible(fn (): bool => auth()->user()?->isPlatformAdmin() ?? false)
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('deposit_date')
                     ->label('Tanggal Setoran')
                     ->sortable()
@@ -186,7 +200,7 @@ class WasteDepositResource extends Resource
                     ->color('danger')
                     ->icon('heroicon-o-x-circle')
                     ->visible(fn (WasteDeposit $record): bool => $record->status === 'posted')
-                    ->authorize(fn (): bool => Auth::user()?->hasRole('admin') ?? false)
+                    ->authorize(fn (): bool => Auth::user()?->isBankAdmin() ?? false)
                     ->form([
                         Forms\Components\Textarea::make('cancellation_reason')
                             ->label('Alasan pembatalan')
@@ -199,7 +213,7 @@ class WasteDepositResource extends Resource
                     ->modalDescription('Setoran tidak akan dihapus. Saldo anggota akan dikoreksi melalui pembalikan transaksi.')
                     ->modalSubmitActionLabel('Batalkan Setoran')
                     ->action(function (WasteDeposit $record, array $data): void {
-                        abort_unless(Auth::user()?->hasRole('admin'), 403);
+                        abort_unless(Auth::user()?->isBankAdmin(), 403);
 
                         app(DepositService::class)->cancel($record, $data['cancellation_reason'], Auth::id());
                     }),

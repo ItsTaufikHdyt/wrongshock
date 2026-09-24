@@ -27,6 +27,11 @@ class SubDistrictResource extends Resource
 
     protected static ?string $navigationGroup = 'Master Data';
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->isPlatformAdmin() ?? false;
+    }
+
     public static function form(Form $form): Form
     {
         return $form

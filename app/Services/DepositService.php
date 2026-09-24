@@ -4,13 +4,14 @@ namespace App\Services;
 
 use App\Models\LedgerEntry;
 use App\Models\User;
+use App\Models\WasteBank;
 use App\Models\WasteDeposit;
 use App\Models\WasteItem;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class DepositService
@@ -20,16 +21,19 @@ class DepositService
      *
      * @param  array<int, array{waste_item_id:mixed, quantity:mixed}>  $items
      */
-    public function post(int $userId, string $depositDate, array $items, ?int $actorId = null): WasteDeposit
+    public function post(int $userId, string $depositDate, array $items, ?int $actorId = null, WasteBank|int|null $wasteBank = null): WasteDeposit
     {
         $actorId = $this->authorizeAdmin($actorId);
+        $wasteBank = $wasteBank === null
+            ? app(WasteBankContext::class)->current($actorId)
+            : app(WasteBankContext::class)->assertCanOperate($wasteBank, $actorId);
         $this->validateDate($depositDate);
 
         if ($items === []) {
             $this->fail('items', 'At least one deposit item is required.');
         }
 
-        return DB::transaction(function () use ($userId, $depositDate, $items, $actorId): WasteDeposit {
+        return DB::transaction(function () use ($userId, $depositDate, $items, $actorId, $wasteBank): WasteDeposit {
             $user = User::query()->lockForUpdate()->find($userId);
 
             if (! $user) {
@@ -102,6 +106,7 @@ class DepositService
             $deposit = new WasteDeposit;
             $deposit->forceFill([
                 'user_id' => $user->id,
+                'waste_bank_id' => $wasteBank->id,
                 'deposit_date' => $depositDate,
                 'total_amount' => $total,
                 'status' => 'posted',
@@ -153,6 +158,8 @@ class DepositService
             if ($lockedDeposit->status !== 'posted') {
                 throw new \LogicException('Only posted deposits can be cancelled.');
             }
+
+            app(WasteBankContext::class)->assertCanOperate($lockedDeposit->waste_bank_id, $actorId);
 
             $user = User::query()->lockForUpdate()->find($lockedDeposit->user_id);
             if (! $user) {
@@ -248,7 +255,7 @@ class DepositService
         }
 
         return [
-            $whole . '.' . str_pad($fraction, 3, '0'),
+            $whole.'.'.str_pad($fraction, 3, '0'),
             $scaled,
         ];
     }
@@ -272,7 +279,7 @@ class DepositService
         $actorId ??= Auth::id();
         $actor = $actorId !== null ? User::query()->find($actorId) : null;
 
-        if (! $actor || (int) $actor->status !== 1 || ! $actor->hasRole('admin')) {
+        if (! $actor || (int) $actor->status !== 1 || ! $actor->isBankAdmin()) {
             throw new AuthorizationException('An active admin actor is required for deposit financial actions.');
         }
 

@@ -14,17 +14,20 @@ class WithdrawalPolicy
 
     public function viewAny(User $actor): bool
     {
-        return $actor->hasRole('admin');
+        return $actor->isPlatformAdmin() || $actor->isBankAdmin();
     }
 
     public function view(User $actor, Withdrawal $withdrawal): bool
     {
-        return $actor->hasRole('admin') || $actor->is($withdrawal->user);
+        return $actor->isPlatformAdmin()
+            || ($actor->isBankAdmin() && $actor->wasteBanks()->whereKey($withdrawal->waste_bank_id)->exists())
+            || $actor->is($withdrawal->user);
     }
 
     public function create(User $actor): bool
     {
-        return $actor->hasRole('admin');
+        return $actor->isBankAdmin()
+            && $actor->wasteBanks()->where('status', true)->exists();
     }
 
     public function update(User $actor, Withdrawal $withdrawal): bool

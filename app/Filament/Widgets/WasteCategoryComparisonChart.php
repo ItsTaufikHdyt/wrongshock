@@ -3,24 +3,32 @@
 namespace App\Filament\Widgets;
 
 use App\Models\WasteDepositItem;
+use App\Services\WasteBankContext;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\DB;
 
 class WasteCategoryComparisonChart extends ChartWidget
 {
     protected static ?string $heading = 'Perbandingan Kategori Sampah per Bulan';
+
     protected static ?int $sort = 4;
 
     protected function getData(): array
     {
         // Ambil 6 bulan terakhir dalam format Y-m
         $months = collect(range(0, 5))
-            ->map(fn($i) => now()->subMonths($i)->format('Y-m'))
+            ->map(fn ($i) => now()->subMonths($i)->format('Y-m'))
             ->reverse()
             ->values();
+        $wasteBankId = app(WasteBankContext::class)->current()->id;
 
         // Ambil semua kategori unik dari tabel waste_items
-        $categories = DB::table('waste_items')
+        $categories = DB::table('waste_deposit_items')
+            ->join('waste_deposits', 'waste_deposit_items.waste_deposit_id', '=', 'waste_deposits.id')
+            ->leftJoin('waste_items', 'waste_deposit_items.waste_item_id', '=', 'waste_items.id')
+            ->where('waste_deposits.waste_bank_id', $wasteBankId)
+            ->where('waste_deposits.status', 'posted')
+            ->selectRaw("COALESCE(waste_deposit_items.category_snapshot, waste_items.category, 'Tanpa kategori') as category")
             ->distinct()
             ->pluck('category')
             ->filter()
@@ -28,13 +36,11 @@ class WasteCategoryComparisonChart extends ChartWidget
             ->values();
 
         // Ambil data agregat jumlah sampah per kategori dan bulan
-        $results = WasteDepositItem::selectRaw('
-                DATE_FORMAT(waste_deposits.deposit_date, "%Y-%m") as month,
-                waste_items.category as category,
-                SUM(waste_deposit_items.quantity) as total
-            ')
+        $results = WasteDepositItem::selectRaw("\n                DATE_FORMAT(waste_deposits.deposit_date, '%Y-%m') as month,\n                COALESCE(waste_deposit_items.category_snapshot, waste_items.category, 'Tanpa kategori') as category,\n                SUM(waste_deposit_items.quantity) as total\n            ")
             ->join('waste_deposits', 'waste_deposit_items.waste_deposit_id', '=', 'waste_deposits.id')
-            ->join('waste_items', 'waste_deposit_items.waste_item_id', '=', 'waste_items.id')
+            ->leftJoin('waste_items', 'waste_deposit_items.waste_item_id', '=', 'waste_items.id')
+            ->where('waste_deposits.waste_bank_id', $wasteBankId)
+            ->where('waste_deposits.status', 'posted')
             ->whereIn(DB::raw('DATE_FORMAT(waste_deposits.deposit_date, "%Y-%m")'), $months)
             ->groupBy('month', 'category')
             ->orderBy('month')
@@ -45,7 +51,8 @@ class WasteCategoryComparisonChart extends ChartWidget
 
         foreach ($categories as $category) {
             $data = $months->map(function ($month) use ($results, $category) {
-                $record = $results->first(fn($r) => $r->month === $month && $r->category === $category);
+                $record = $results->first(fn ($r) => $r->month === $month && $r->category === $category);
+
                 return $record ? (float) $record->total : 0;
             });
 

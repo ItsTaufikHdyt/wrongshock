@@ -5,8 +5,8 @@ namespace App\Services;
 use App\Models\LedgerEntry;
 use App\Models\User;
 use App\Models\Withdrawal;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -16,9 +16,10 @@ class WithdrawalService
     public function request(int $userId, mixed $amount, ?int $actorId = null, ?string $note = null): Withdrawal
     {
         $actorId = $this->authorizeAdmin($actorId);
+        $wasteBank = app(WasteBankContext::class)->current($actorId);
         $amount = $this->normalizeAmount($amount);
 
-        return DB::transaction(function () use ($userId, $amount, $actorId, $note): Withdrawal {
+        return DB::transaction(function () use ($userId, $amount, $actorId, $note, $wasteBank): Withdrawal {
             $user = User::query()->lockForUpdate()->find($userId);
             if (! $user) {
                 throw (new ModelNotFoundException)->setModel(User::class, [$userId]);
@@ -32,6 +33,7 @@ class WithdrawalService
             $withdrawal = new Withdrawal;
             $withdrawal->forceFill([
                 'user_id' => $user->id,
+                'waste_bank_id' => $wasteBank->id,
                 'amount' => $amount,
                 'status' => 'pending',
                 'withdrawal_date' => today(),
@@ -46,11 +48,14 @@ class WithdrawalService
     public function approve(Withdrawal|int $withdrawal, ?int $actorId = null): Withdrawal
     {
         $actorId = $this->authorizeAdmin($actorId);
+
         return DB::transaction(function () use ($withdrawal, $actorId): Withdrawal {
             $lockedWithdrawal = $this->lockWithdrawal($withdrawal);
             if ($lockedWithdrawal->status !== 'pending') {
                 throw new \LogicException('Only pending withdrawals can be approved.');
             }
+
+            app(WasteBankContext::class)->assertCanOperate($lockedWithdrawal->waste_bank_id, $actorId);
 
             $this->assertActorExists($actorId);
             $user = User::query()->lockForUpdate()->find($lockedWithdrawal->user_id);
@@ -110,6 +115,8 @@ class WithdrawalService
                 throw new \LogicException('Only pending withdrawals can be rejected.');
             }
 
+            app(WasteBankContext::class)->assertCanOperate($lockedWithdrawal->waste_bank_id, $actorId);
+
             $this->assertActorExists($actorId);
             $lockedWithdrawal->forceFill([
                 'status' => 'rejected',
@@ -167,7 +174,7 @@ class WithdrawalService
         $actorId ??= Auth::id();
         $actor = $actorId !== null ? User::query()->find($actorId) : null;
 
-        if (! $actor || (int) $actor->status !== 1 || ! $actor->hasRole('admin')) {
+        if (! $actor || (int) $actor->status !== 1 || ! $actor->isBankAdmin()) {
             throw new AuthorizationException('An active admin actor is required for withdrawal financial actions.');
         }
 

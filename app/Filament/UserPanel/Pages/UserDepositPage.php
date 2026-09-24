@@ -12,6 +12,7 @@ abstract class UserDepositPage extends Page
     protected function depositQuery(Builder $query): Builder
     {
         return $query->with([
+            'wasteBank:id,name',
             'items' => fn ($query) => $query->select([
                 'id',
                 'waste_deposit_id',

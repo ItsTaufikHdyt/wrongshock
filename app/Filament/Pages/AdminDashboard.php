@@ -10,6 +10,7 @@ use App\Filament\Resources\WasteItemResource;
 use App\Filament\Resources\WithdrawalResource;
 use App\Models\User;
 use App\Models\WasteDeposit;
+use App\Services\WasteBankContext;
 use Filament\Pages\Dashboard;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -33,20 +34,32 @@ class AdminDashboard extends Dashboard
 
     public function getDashboardData(): array
     {
+        if (auth()->user()?->isPlatformAdmin()) {
+            return $this->getPlatformDashboardData();
+        }
+
         $now = now();
         $monthStart = $now->copy()->startOfMonth();
         $monthEnd = $now->copy()->endOfMonth();
         $trendStart = $monthStart->copy()->subMonths(5);
+        $wasteBank = app(WasteBankContext::class)->current();
 
-        $memberQuery = User::query()->whereHas('roles', fn ($query) => $query->where('name', 'user'));
+        $memberQuery = User::query()
+            ->whereHas('roles', fn ($query) => $query->where('name', 'user'))
+            ->where(function ($query) use ($wasteBank): void {
+                $query->whereHas('wasteDeposits', fn ($depositQuery) => $depositQuery->where('waste_bank_id', $wasteBank->id))
+                    ->orWhereHas('withdrawals', fn ($withdrawalQuery) => $withdrawalQuery->where('waste_bank_id', $wasteBank->id));
+            });
 
         $monthlyDeposits = WasteDeposit::query()
+            ->where('waste_bank_id', $wasteBank->id)
             ->where('status', 'posted')
             ->whereBetween('deposit_date', [$monthStart->toDateString(), $monthEnd->toDateString()]);
 
         $trendRows = WasteDeposit::query()
             ->selectRaw('deposit_date, COUNT(*) as deposit_count, SUM(total_amount) as total_amount')
             ->where('status', 'posted')
+            ->where('waste_bank_id', $wasteBank->id)
             ->whereBetween('deposit_date', [$trendStart->toDateString(), $monthEnd->toDateString()])
             ->groupBy('deposit_date')
             ->get();
@@ -67,6 +80,7 @@ class AdminDashboard extends Dashboard
             ->leftJoin('waste_items', 'waste_deposit_items.waste_item_id', '=', 'waste_items.id')
             ->selectRaw("COALESCE(waste_deposit_items.category_snapshot, waste_items.category, 'Tanpa kategori') as category, SUM(waste_deposit_items.subtotal) as total_amount")
             ->where('waste_deposits.status', 'posted')
+            ->where('waste_deposits.waste_bank_id', $wasteBank->id)
             ->whereBetween('waste_deposits.deposit_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
             ->groupByRaw("COALESCE(waste_deposit_items.category_snapshot, waste_items.category, 'Tanpa kategori')")
             ->orderByDesc('total_amount')
@@ -79,6 +93,7 @@ class AdminDashboard extends Dashboard
             ->all();
 
         $recentDeposits = WasteDeposit::query()
+            ->where('waste_bank_id', $wasteBank->id)
             ->with('user:id,name,number')
             ->latest('deposit_date')
             ->latest('id')
@@ -95,7 +110,9 @@ class AdminDashboard extends Dashboard
             ->count();
 
         return [
+            'platform' => false,
             'admin' => auth()->user(),
+            'waste_bank' => $wasteBank,
             'period' => $monthStart->translatedFormat('F Y'),
             'members' => $members,
             'active_members' => $activeMembers,
@@ -108,7 +125,7 @@ class AdminDashboard extends Dashboard
             'has_composition_data' => $composition !== [],
             'recent_deposits' => $recentDeposits,
             'inactive_members' => (clone $memberQuery)->where('status', 0)->count(),
-            'pending_withdrawals' => DB::table('withdrawals')->where('status', 'pending')->count(),
+            'pending_withdrawals' => DB::table('withdrawals')->where('waste_bank_id', $wasteBank->id)->where('status', 'pending')->count(),
             'links' => [
                 'members' => UserResource::getUrl('index', panel: 'adminPanel'),
                 'deposits' => WasteDepositResource::getUrl('index', panel: 'adminPanel'),
@@ -116,6 +133,27 @@ class AdminDashboard extends Dashboard
                 'withdrawals' => WithdrawalResource::getUrl('index', panel: 'adminPanel'),
                 'districts' => DistrictResource::getUrl('index', panel: 'adminPanel'),
                 'sub_districts' => SubDistrictResource::getUrl('index', panel: 'adminPanel'),
+            ],
+        ];
+    }
+
+    private function getPlatformDashboardData(): array
+    {
+        $postedDeposits = WasteDeposit::query()->where('status', 'posted');
+
+        return [
+            'platform' => true,
+            'admin' => auth()->user(),
+            'bank_count' => \App\Models\WasteBank::query()->count(),
+            'active_bank_count' => \App\Models\WasteBank::query()->where('status', true)->count(),
+            'member_count' => User::query()->whereHas('roles', fn ($query) => $query->where('name', 'user'))->count(),
+            'deposit_count' => $postedDeposits->count(),
+            'deposit_amount' => (int) (clone $postedDeposits)->sum('total_amount'),
+            'links' => [
+                'banks' => \App\Filament\Resources\WasteBankResource::getUrl('index', panel: 'adminPanel'),
+                'staff' => \App\Filament\Resources\WasteBankStaffResource::getUrl('index', panel: 'adminPanel'),
+                'members' => UserResource::getUrl('index', panel: 'adminPanel'),
+                'deposits' => WasteDepositResource::getUrl('index', panel: 'adminPanel'),
             ],
         ];
     }

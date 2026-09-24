@@ -123,6 +123,7 @@ class AdminDepositFormTest extends TestCase
             'status' => 1,
         ]);
         $admin->assignRole(Role::findOrCreate('admin', 'web'));
+        $this->assignDefaultWasteBank($admin);
 
         return $admin->refresh();
     }

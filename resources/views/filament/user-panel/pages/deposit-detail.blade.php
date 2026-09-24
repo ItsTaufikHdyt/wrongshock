@@ -9,6 +9,7 @@
                 <span class="ws-eyebrow">Rincian transaksi</span>
                 <h1 id="detail-title">Setoran Sampah</h1>
                 <p><x-filament::icon icon="heroicon-o-calendar-days" aria-hidden="true" /> {{ $this->formatDate($deposit->deposit_date, true) }}</p>
+                <p><x-filament::icon icon="heroicon-o-building-storefront" aria-hidden="true" /> {{ $deposit->wasteBank?->name ?? 'Bank Sampah Utama' }}</p>
             </div>
             <span class="ws-status {{ $this->statusClasses($deposit->status) }}">{{ $this->statusLabel($deposit->status) }}</span>
         </section>

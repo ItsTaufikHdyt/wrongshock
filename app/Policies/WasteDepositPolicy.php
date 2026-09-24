@@ -14,26 +14,33 @@ class WasteDepositPolicy
 
     public function viewAny(User $actor): bool
     {
-        return $actor->hasRole('admin');
+        return $actor->isPlatformAdmin() || $actor->isBankAdmin();
     }
 
     public function view(User $actor, WasteDeposit $deposit): bool
     {
-        return $actor->hasRole('admin') || $actor->is($deposit->user);
+        return $actor->isPlatformAdmin()
+            || ($actor->isBankAdmin() && $actor->wasteBanks()->whereKey($deposit->waste_bank_id)->exists())
+            || $actor->is($deposit->user);
     }
 
     public function create(User $actor): bool
     {
-        return $actor->hasRole('admin');
+        return $actor->isBankAdmin()
+            && $actor->wasteBanks()->where('status', true)->exists();
     }
 
     public function update(User $actor, WasteDeposit $deposit): bool
     {
-        return $actor->hasRole('admin') && $deposit->status === 'draft';
+        return $actor->isBankAdmin()
+            && $actor->wasteBanks()->whereKey($deposit->waste_bank_id)->where('status', true)->exists()
+            && $deposit->status === 'draft';
     }
 
     public function delete(User $actor, WasteDeposit $deposit): bool
     {
-        return $actor->hasRole('admin') && $deposit->status === 'draft';
+        return $actor->isBankAdmin()
+            && $actor->wasteBanks()->whereKey($deposit->waste_bank_id)->where('status', true)->exists()
+            && $deposit->status === 'draft';
     }
 }

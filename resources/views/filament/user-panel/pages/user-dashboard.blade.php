@@ -68,7 +68,8 @@
                             <div class="ws-transaction-head">
                                 <div>
                                     <h3>Setoran Sampah</h3>
-                                    <p><x-filament::icon icon="heroicon-o-cube" aria-hidden="true" /> {{ $deposit->items->count() }} item sampah</p>
+                                <p><x-filament::icon icon="heroicon-o-cube" aria-hidden="true" /> {{ $deposit->items->count() }} item sampah</p>
+                                <p><x-filament::icon icon="heroicon-o-building-storefront" aria-hidden="true" /> {{ $deposit->wasteBank?->name ?? 'Bank Sampah Utama' }}</p>
                                 </div>
                                 <span class="ws-status {{ $this->statusClasses($deposit->status) }}">{{ $this->statusLabel($deposit->status) }}</span>
                             </div>

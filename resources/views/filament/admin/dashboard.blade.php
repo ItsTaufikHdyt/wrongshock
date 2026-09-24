@@ -1,12 +1,29 @@
 @php($data = $this->getDashboardData())
 
 <x-filament-panels::page class="ws-admin-dashboard">
+    @if ($data['platform'])
+        <div class="ws-admin-page">
+            <section class="ws-admin-welcome" aria-labelledby="platform-dashboard-title">
+                <div>
+                    <span class="ws-admin-eyebrow">Manajemen platform</span>
+                    <h1 id="platform-dashboard-title">Ringkasan Platform Wrongshock</h1>
+                    <p>Semua Bank Sampah</p>
+                </div>
+            </section>
+            <div class="ws-admin-kpi-grid">
+                <article class="ws-admin-kpi ws-admin-kpi-mint"><span class="ws-admin-kpi-label">Total Bank Sampah</span><strong>{{ number_format($data['bank_count'], 0, ',', '.') }}</strong></article>
+                <article class="ws-admin-kpi ws-admin-kpi-sky"><span class="ws-admin-kpi-label">Bank Aktif</span><strong>{{ number_format($data['active_bank_count'], 0, ',', '.') }}</strong></article>
+                <article class="ws-admin-kpi ws-admin-kpi-lilac"><span class="ws-admin-kpi-label">Total Anggota</span><strong>{{ number_format($data['member_count'], 0, ',', '.') }}</strong></article>
+                <article class="ws-admin-kpi ws-admin-kpi-yellow"><span class="ws-admin-kpi-label">Setoran Berhasil</span><strong>{{ number_format($data['deposit_count'], 0, ',', '.') }}</strong><small>{{ $this->formatCurrency($data['deposit_amount']) }}</small></article>
+            </div>
+        </div>
+    @else
     <div class="ws-admin-page">
         <section class="ws-admin-welcome" aria-labelledby="admin-dashboard-title">
             <div>
                 <span class="ws-admin-eyebrow">Ringkasan operasional</span>
                 <h1 id="admin-dashboard-title">Selamat datang kembali, {{ $data['admin']?->name ?? 'Admin' }}</h1>
-                <p>Pantau aktivitas bank sampah dan kelola operasional Wrongshock dari satu tempat.</p>
+                <p>{{ $data['waste_bank']->name }}<br>Pantau aktivitas bank sampah dan kelola operasional Wrongshock dari satu tempat.</p>
             </div>
             <div class="ws-admin-period" aria-label="Periode dashboard">
                 <x-filament::icon icon="heroicon-o-calendar-days" />
@@ -169,4 +186,5 @@
             @endif
         </section>
     </div>
+    @endif
 </x-filament-panels::page>

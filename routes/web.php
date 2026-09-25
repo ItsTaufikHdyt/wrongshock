@@ -32,9 +32,7 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
-Route::get('/register', function () {
-    return view('register');
-})->name('register');
+Route::get('/register', [RegisterController::class, 'show'])->name('register');
 
 Route::post('/storeRegister', [RegisterController::class, 'register'])
     ->middleware('throttle:6,1')

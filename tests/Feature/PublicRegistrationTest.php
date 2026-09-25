@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Models\WasteBank;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
@@ -24,6 +26,7 @@ class PublicRegistrationTest extends TestCase
             ->assertSee('Kecamatan')
             ->assertSee('Kelurahan')
             ->assertSee('Alamat Lengkap')
+            ->assertSee('Bank Sampah')
             ->assertSee('Daftar Sekarang')
             ->assertSee('/user/login', false)
             ->assertSee('/', false)
@@ -39,6 +42,7 @@ class PublicRegistrationTest extends TestCase
     public function test_valid_registration_creates_hashed_inactive_member_with_zero_balance(): void
     {
         [$districtId, $subDistrictId] = $this->region();
+        $bank = $this->bank('BS001', 'Wrongshock Bank Sampah Utama');
 
         $this->withoutMiddleware()->post('/storeRegister', [
             'name' => 'New Member',
@@ -46,6 +50,7 @@ class PublicRegistrationTest extends TestCase
             'address' => 'Jalan Lingkungan 1',
             'district' => $districtId,
             'sub_district' => $subDistrictId,
+            'waste_bank_id' => $bank->id,
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ])->assertRedirect('/register')->assertSessionHas('success');
@@ -60,12 +65,19 @@ class PublicRegistrationTest extends TestCase
         $this->assertNotEmpty($user->number);
         $this->assertTrue($user->hasRole('user'));
         $this->assertFalse($user->hasRole('admin'));
+        $this->assertDatabaseHas('waste_bank_members', [
+            'user_id' => $user->id,
+            'waste_bank_id' => $bank->id,
+            'status' => 'active',
+        ]);
+        $this->assertDatabaseMissing('waste_bank_staff', ['user_id' => $user->id]);
         $this->get('/register')->assertSee('menunggu aktivasi');
     }
 
     public function test_registration_validation_preserves_safe_input_but_never_passwords(): void
     {
         [$districtId, $subDistrictId] = $this->region();
+        $bank = $this->bank('BS001', 'Wrongshock Bank Sampah Utama');
 
         $this->withoutMiddleware()->from('/register')->post('/storeRegister', [
             'name' => 'Safe Name',
@@ -73,6 +85,7 @@ class PublicRegistrationTest extends TestCase
             'address' => 'Safe Address',
             'district' => $districtId,
             'sub_district' => $subDistrictId,
+            'waste_bank_id' => $bank->id,
             'password' => 'short',
             'password_confirmation' => 'different',
         ])->assertRedirect('/register')->assertSessionHasErrors(['password']);
@@ -81,6 +94,7 @@ class PublicRegistrationTest extends TestCase
         $this->assertSame('safe@example.test', session()->getOldInput('email'));
         $this->assertSame($districtId, (int) session()->getOldInput('district'));
         $this->assertSame($subDistrictId, (int) session()->getOldInput('sub_district'));
+        $this->assertSame($bank->id, (int) session()->getOldInput('waste_bank_id'));
         $this->assertFalse(session()->hasOldInput('password'));
         $this->assertFalse(session()->hasOldInput('password_confirmation'));
     }
@@ -89,6 +103,7 @@ class PublicRegistrationTest extends TestCase
     {
         $this->withoutMiddleware();
         [$districtId, $subDistrictId] = $this->region();
+        $bank = $this->bank('BS001', 'Wrongshock Bank Sampah Utama');
         $existing = $this->createExistingUser('existing@example.test', $districtId, $subDistrictId);
         [$otherDistrict] = $this->region();
 
@@ -98,12 +113,13 @@ class PublicRegistrationTest extends TestCase
             'address' => 'Address',
             'district' => $districtId,
             'sub_district' => $subDistrictId,
+            'waste_bank_id' => $bank->id,
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ])->assertRedirect('/register')->assertSessionHasErrors('email');
 
         $this->from('/register')->post('/storeRegister', [])->assertRedirect('/register')
-            ->assertSessionHasErrors(['name', 'email', 'address', 'district', 'sub_district', 'password']);
+            ->assertSessionHasErrors(['name', 'email', 'address', 'district', 'sub_district', 'waste_bank_id', 'password']);
 
         $this->from('/register')->post('/storeRegister', [
             'name' => 'Wrong Region',
@@ -111,6 +127,7 @@ class PublicRegistrationTest extends TestCase
             'address' => 'Address',
             'district' => $otherDistrict,
             'sub_district' => $subDistrictId,
+            'waste_bank_id' => $bank->id,
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ])->assertRedirect('/register')->assertSessionHasErrors('sub_district');
@@ -121,6 +138,7 @@ class PublicRegistrationTest extends TestCase
             'address' => 'Address',
             'district' => 999999,
             'sub_district' => 999999,
+            'waste_bank_id' => $bank->id,
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ])->assertRedirect('/register')->assertSessionHasErrors(['district', 'sub_district']);
@@ -129,6 +147,7 @@ class PublicRegistrationTest extends TestCase
     public function test_registration_ignores_protected_fields_and_requires_csrf(): void
     {
         [$districtId, $subDistrictId] = $this->region();
+        $bank = $this->bank('BS001', 'Wrongshock Bank Sampah Utama');
 
         $this->post('/storeRegister', [
             'name' => 'No Forgery',
@@ -136,6 +155,7 @@ class PublicRegistrationTest extends TestCase
             'address' => 'Address',
             'district' => $districtId,
             'sub_district' => $subDistrictId,
+            'waste_bank_id' => $bank->id,
             'password' => 'password123',
             'password_confirmation' => 'password123',
             'balance' => 999999,
@@ -150,6 +170,7 @@ class PublicRegistrationTest extends TestCase
             'address' => 'Address',
             'district' => $districtId,
             'sub_district' => $subDistrictId,
+            'waste_bank_id' => $bank->id,
             'password' => 'password123',
             'password_confirmation' => 'password123',
             'balance' => 999999,
@@ -164,6 +185,95 @@ class PublicRegistrationTest extends TestCase
         $this->assertNotSame('FORGED-NUMBER', $user->number);
         $this->assertTrue($user->hasRole('user'));
         $this->assertFalse($user->hasRole('admin'));
+    }
+
+    public function test_registration_lists_only_active_banks_and_creates_one_selected_membership(): void
+    {
+        [$districtId, $subDistrictId] = $this->region();
+        $bankA = $this->bank('BSA'.uniqid(), 'Bank Aktif A');
+        $bankB = $this->bank('BSB'.uniqid(), 'Bank Aktif B');
+        $inactive = $this->bank('BSC'.uniqid(), 'Bank Tidak Aktif', false);
+
+        $this->get('/register')
+            ->assertSee($bankA->code)
+            ->assertSee($bankB->code)
+            ->assertDontSee($inactive->code);
+
+        $this->withoutMiddleware()->post('/storeRegister', [
+            'name' => 'Selected Bank Member',
+            'email' => 'selected-bank@example.test',
+            'address' => 'Address',
+            'district' => $districtId,
+            'sub_district' => $subDistrictId,
+            'waste_bank_id' => $bankB->id,
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ])->assertRedirect('/register')->assertSessionHas('success');
+
+        $user = User::query()->where('email', 'selected-bank@example.test')->firstOrFail();
+        $this->assertDatabaseHas('waste_bank_members', [
+            'user_id' => $user->id,
+            'waste_bank_id' => $bankB->id,
+            'status' => 'active',
+        ]);
+        $this->assertDatabaseMissing('waste_bank_members', [
+            'user_id' => $user->id,
+            'waste_bank_id' => $bankA->id,
+        ]);
+    }
+
+    public function test_registration_rejects_inactive_and_nonexistent_banks_without_creating_user(): void
+    {
+        [$districtId, $subDistrictId] = $this->region();
+        $inactive = $this->bank('BSI'.uniqid(), 'Bank Tidak Aktif', false);
+        $payload = [
+            'name' => 'Rejected Bank Member',
+            'email' => 'rejected-bank@example.test',
+            'address' => 'Address',
+            'district' => $districtId,
+            'sub_district' => $subDistrictId,
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ];
+
+        $this->withoutMiddleware()->from('/register')->post('/storeRegister', $payload + [
+            'waste_bank_id' => $inactive->id,
+        ])->assertRedirect('/register')->assertSessionHasErrors('waste_bank_id');
+
+        $this->withoutMiddleware()->from('/register')->post('/storeRegister', $payload + [
+            'waste_bank_id' => 999999,
+        ])->assertRedirect('/register')->assertSessionHasErrors('waste_bank_id');
+
+        $this->assertDatabaseMissing('users', ['email' => $payload['email']]);
+    }
+
+    public function test_registration_rolls_back_user_when_initial_membership_creation_fails(): void
+    {
+        [$districtId, $subDistrictId] = $this->region();
+        $bank = $this->bank('BSR'.uniqid(), 'Bank Rollback');
+        Event::listen('eloquent.saving: '.\App\Models\WasteBankMember::class, static function (): never {
+            throw new \LogicException('forced membership failure');
+        });
+
+        try {
+            $this->withoutExceptionHandling()->withoutMiddleware()->post('/storeRegister', [
+                'name' => 'Rollback Member',
+                'email' => 'rollback@example.test',
+                'address' => 'Address',
+                'district' => $districtId,
+                'sub_district' => $subDistrictId,
+                'waste_bank_id' => $bank->id,
+                'password' => 'password123',
+                'password_confirmation' => 'password123',
+            ]);
+            $this->fail('Registration should roll back when membership creation fails.');
+        } catch (\LogicException $exception) {
+            $this->assertSame('forced membership failure', $exception->getMessage());
+        } finally {
+            Event::forget('eloquent.saving: '.\App\Models\WasteBankMember::class);
+        }
+
+        $this->assertDatabaseMissing('users', ['email' => 'rollback@example.test']);
     }
 
     public function test_public_location_endpoints_return_only_required_location_data(): void
@@ -222,5 +332,10 @@ class PublicRegistrationTest extends TestCase
             'status' => 0,
             'balance' => 0,
         ]);
+    }
+
+    private function bank(string $code, string $name, bool $status = true): WasteBank
+    {
+        return WasteBank::query()->firstOrCreate(['code' => $code], compact('name', 'status'));
     }
 }

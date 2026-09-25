@@ -99,6 +99,43 @@ class BankMembershipService
         });
     }
 
+    public function registerCitizen(array $attributes, WasteBank|int $bank): User
+    {
+        $bank = $bank instanceof WasteBank
+            ? $bank->fresh()
+            : WasteBank::query()->find($bank);
+
+        if (! $bank?->exists || ! $bank->status) {
+            throw ValidationException::withMessages([
+                'waste_bank_id' => 'Bank Sampah yang dipilih tidak tersedia atau tidak aktif.',
+            ]);
+        }
+
+        return $this->database->transaction(function () use ($bank, $attributes): User {
+            $user = User::query()->create([
+                'number' => $attributes['number'],
+                'name' => $attributes['name'],
+                'email' => $attributes['email'],
+                'address' => $attributes['address'],
+                'district_id' => $attributes['district_id'],
+                'sub_district_id' => $attributes['sub_district_id'],
+                'password' => $attributes['password'],
+                'status' => 0,
+                'balance' => 0,
+            ]);
+
+            $user->assignRole(Role::findOrCreate('user', 'web'));
+            WasteBankMember::query()->create([
+                'waste_bank_id' => $bank->id,
+                'user_id' => $user->id,
+                'joined_at' => now(),
+                'status' => 'active',
+            ]);
+
+            return $user->refresh();
+        });
+    }
+
     private function resolveBank(User $actor, ?WasteBank $bank): WasteBank
     {
         if ($actor->isBankAdmin()) {

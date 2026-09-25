@@ -4,14 +4,25 @@ namespace App\Http\Controllers;
 
 use App\Models\District;
 use App\Models\SubDistrict;
-use App\Models\User;
+use App\Models\WasteBank;
+use App\Services\BankMembershipService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Spatie\Permission\Models\Role;
 
 class RegisterController extends Controller
 {
+    public function show()
+    {
+        return view('register', [
+            'wasteBanks' => WasteBank::query()
+                ->with(['district', 'subDistrict'])
+                ->where('status', true)
+                ->orderBy('name')
+                ->get(),
+        ]);
+    }
+
     public function register(Request $request)
     {
         // Validasi input
@@ -21,10 +32,13 @@ class RegisterController extends Controller
             'address' => 'required|string|max:255',
             'district' => 'required|integer|exists:districts,id',
             'sub_district' => 'required|integer|exists:sub_districts,id',
+            'waste_bank_id' => 'required|integer',
             'password' => 'required|string|min:8|confirmed',
         ], [
             'email.unique' => 'Email ini sudah terdaftar.',
             'password.confirmed' => 'Konfirmasi password tidak sama.',
+            'waste_bank_id.required' => 'Bank Sampah wajib dipilih.',
+            'waste_bank_id.integer' => 'Bank Sampah yang dipilih tidak valid.',
         ]);
 
         if ($validator->fails()) {
@@ -42,8 +56,6 @@ class RegisterController extends Controller
                 ->withInput($request->except(['password', 'password_confirmation']));
         }
 
-        $userRole = Role::firstOrCreate(['name' => 'user']);
-
         $kodeKota = '001'; // Bontang
         $kodeDistrict = str_pad($request->district, 2, '0', STR_PAD_LEFT);
         $kodeSubDistrict = str_pad($request->sub_district, 2, '0', STR_PAD_LEFT);
@@ -56,19 +68,15 @@ class RegisterController extends Controller
         // gabungkan jadi format ID
         $number = $kodeKota.$kodeDistrict.$kodeSubDistrict.$tahun.$randomNumber;
 
-        // Simpan ke database
-        $user = User::create([
-            'number' => $number, // contoh format nomor
+        app(BankMembershipService::class)->registerCitizen([
+            'number' => $number,
             'name' => $request->name,
             'email' => $request->email,
             'address' => $request->address,
             'district_id' => $request->district,
             'sub_district_id' => $request->sub_district,
             'password' => Hash::make($request->password),
-            'status' => 0, // tidak aktif
-            'balance' => 0, // saldo awal
-        ]);
-        $user->assignRole($userRole);
+        ], $request->integer('waste_bank_id'));
 
         return redirect('/register')->with('success', 'Pendaftaran berhasil. Akun Anda menunggu aktivasi dari pengelola.');
     }

@@ -110,6 +110,22 @@
                                 <textarea id="address" name="address" rows="3" autocomplete="street-address" placeholder="Alamat tempat tinggal" required aria-invalid="{{ $errors->has('address') ? 'true' : 'false' }}" aria-describedby="address-error">{{ old('address') }}</textarea>
                                 @error('address')<p id="address-error" class="ws-register-field-error">{{ $message }}</p>@enderror
                             </div>
+                            <div class="ws-register-field ws-register-field-full">
+                                <label for="waste_bank_id">Bank Sampah <span aria-hidden="true">*</span></label>
+                                <select id="waste_bank_id" name="waste_bank_id" required aria-invalid="{{ $errors->has('waste_bank_id') ? 'true' : 'false' }}" aria-describedby="waste-bank-help waste-bank-error">
+                                    <option value="">Pilih Bank Sampah</option>
+                                    @foreach ($wasteBanks as $wasteBank)
+                                        <option value="{{ $wasteBank->id }}" @selected((string) old('waste_bank_id') === (string) $wasteBank->id)>
+                                            {{ $wasteBank->code }} — {{ $wasteBank->name }}
+                                            @if ($wasteBank->district || $wasteBank->subDistrict)
+                                                ({{ $wasteBank->district?->name ?: '-' }}{{ $wasteBank->subDistrict ? ' • '.$wasteBank->subDistrict->name : '' }})
+                                            @endif
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <p id="waste-bank-help" class="ws-register-field-help">Pilih Bank Sampah tujuan Anda.</p>
+                                @error('waste_bank_id')<p id="waste-bank-error" class="ws-register-field-error">{{ $message }}</p>@enderror
+                            </div>
                         </div>
                     </fieldset>
 

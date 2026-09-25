@@ -246,6 +246,10 @@ class AuthorizationTest extends TestCase
     {
         $this->withoutMiddleware();
         [$districtId, $subDistrictId] = $this->region();
+        $bank = WasteBank::query()->firstOrCreate(
+            ['code' => 'BS001'],
+            ['name' => 'Test Bank Sampah', 'status' => true]
+        );
 
         $response = $this->post('/storeRegister', [
             'name' => 'New Member',
@@ -253,6 +257,7 @@ class AuthorizationTest extends TestCase
             'address' => 'Address',
             'district' => $districtId,
             'sub_district' => $subDistrictId,
+            'waste_bank_id' => $bank->id,
             'password' => 'password123',
             'password_confirmation' => 'password123',
             'balance' => 999999,
@@ -273,6 +278,10 @@ class AuthorizationTest extends TestCase
         $this->withoutMiddleware();
         [$firstDistrict, $firstSubDistrict] = $this->region();
         [$secondDistrict] = $this->region();
+        $bank = WasteBank::query()->firstOrCreate(
+            ['code' => 'BS001'],
+            ['name' => 'Test Bank Sampah', 'status' => true]
+        );
 
         $response = $this->from('/register')->post('/storeRegister', [
             'name' => 'Invalid Region',
@@ -280,6 +289,7 @@ class AuthorizationTest extends TestCase
             'address' => 'Address',
             'district' => $secondDistrict,
             'sub_district' => $firstSubDistrict,
+            'waste_bank_id' => $bank->id,
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);

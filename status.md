@@ -252,6 +252,33 @@ the `waste_bank_staff` relation and centralized admin assignment services.
 Per-bank balance is approved for P2.1D but is not implemented in P2.1C; legacy
 global financial behavior remains unchanged until that phase.
 
+### Citizen Registration -> Membership
+
+Status: COMPLETE. Public registration now requires one active Waste Bank
+selection and never adds `waste_bank_id` to `users`. The selector filters active
+banks, orders them by name, and presents the bank code/name with optional
+location context.
+
+Registration -> Membership:
+
+- Selected bank: one explicitly selected active Waste Bank.
+- Membership status: one `waste_bank_members` row with `active` status.
+- Atomic registration: global User creation, `user` role assignment, and initial
+  membership run in one transaction; failures roll back the User.
+- Role protection: forged role/status/balance/number inputs are ignored; public
+  registration always creates the normal `user` role with zero balance.
+- Forged bank protection: nonexistent and inactive bank IDs are rejected
+  server-side before user creation.
+- Admin member visibility: the new membership is visible only to its selected
+  bank; it becomes deposit-eligible after the User account is activated.
+- Deposit eligibility: active membership and active User status are required by
+  the canonical deposit service for the current bank.
+
+Registration tests cover active-bank registration, active-bank filtering,
+inactive/nonexistent bank rejection, atomic rollback, role forging, and initial
+membership creation without staff assignment. Per-bank balance remains deferred
+to P2.1D.
+
 ### Admin Sidebar UX Fix --- Expanded Navigation
 
 Status: COMPLETE. The icon-only desktop behavior was caused by the explicit

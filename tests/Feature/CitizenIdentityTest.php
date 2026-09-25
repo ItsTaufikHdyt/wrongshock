@@ -177,6 +177,27 @@ class CitizenIdentityTest extends TestCase
             ->assertSee('data:image/svg+xml');
     }
 
+    public function test_member_card_does_not_expose_another_citizen_or_admin_access(): void
+    {
+        $firstAttributes = $this->citizenAttributes();
+        $firstAttributes['name'] = 'First Card Citizen';
+        $secondAttributes = $this->citizenAttributes();
+        $secondAttributes['name'] = 'Second Card Citizen';
+        $first = app(CitizenIdentityService::class)->createCitizen($firstAttributes);
+        $second = app(CitizenIdentityService::class)->createCitizen($secondAttributes);
+        $admin = $this->createSuperAdmin();
+
+        $this->actingAs($first, 'web')
+            ->get('/user/kartu-anggota')
+            ->assertOk()
+            ->assertSee($first->name)
+            ->assertDontSee($second->name);
+
+        $this->actingAs($admin, 'web')
+            ->get('/user/kartu-anggota')
+            ->assertForbidden();
+    }
+
     private function createSuperAdmin(): User
     {
         $admin = app(CitizenIdentityService::class)->createCitizen($this->citizenAttributes());

@@ -2,7 +2,7 @@
 
 ## Overall
 
-**Current status: P2.2A COMPLETE / P2.2B COMPLETE / P2.2C CODE COMPLETE - MANUAL DEVICE QA PENDING / P1.8 NOT STARTED / M8 COMPLETE**
+**Current status: P2.2A COMPLETE / P2.2B COMPLETE / P2.2C COMPLETE / P2.2D COMPLETE / P1.8 NOT STARTED / M8 COMPLETE**
 
 This document tracks implementation against `prd.md`. It must be updated
 after every meaningful coding session.
@@ -22,12 +22,14 @@ decimal(12,3). - Domain coverage exists for deposit, cancellation, withdrawal,
  complete.
 
 Current verified development DB: 6 users including three guarded demo users,
-cached balance total 47,600, 3 ledger entries, ledger net 47,600, 3 deposits,
-7 deposit items, and 0 withdrawals. Reconciliation reports MATCH for all 6
+cached balance total 58,000, 4 ledger entries, ledger net 58,000, 4 deposits,
+9 deposit items, and 0 withdrawals. Reconciliation reports MATCH for all 6
 users. All 3 citizens have one global QR token; admins and the super admin do
-not require one. P2.1A added one legacy bank (`BS001`), one legacy admin
-assignment, and bank context to all existing deposits without changing
-financial values or ledger rows.
+not require one. The fourth deposit is an intentional 10,400 BS001 manual
+P2.2C QA deposit; it is preserved and not treated as a repair or audit change.
+P2.1A added one legacy bank (`BS001`), one legacy admin assignment, and bank
+context to existing deposits without changing their financial values or
+ledger rows.
 
 ## Milestones
 
@@ -385,6 +387,37 @@ confirms `Html5Qrcode` and `QR_CODE` exports.
 After the fix, the full suite passes with 224 tests and 1,084 assertions;
 financial totals and reconciliation remain unchanged. Actual camera preview,
 QR scan, close/reopen, and device/browser verification remain pending.
+
+### P2.2D --- QR Hardening and End-to-End QA
+
+Status: COMPLETE / VERIFIED IN AUTOMATION. P2.2 identity, token, payload,
+membership, role/status, rotation, resolver, scanner, member-card privacy, and
+financial-boundary audits are complete. QR remains identification only:
+`WRG:M:<token>` resolves to a global User, `WasteBankContext` and active
+membership determine eligibility, and `DepositService` remains the sole
+transaction authority.
+
+Added high-value coverage for the QR-to-DepositService seam, wrong-bank QR and
+forged `user_id` rejection with no financial mutation, token rotation and
+history invariants, malformed/unknown payloads, inactive banks, duplicate-name
+manual lookup, and member-card privacy/admin denial. Resolver authentication,
+throttling, minimal responses, unique nullable token storage, bounded lookup,
+and local lazy scanner loading were verified. No QR dependency was added to
+withdrawals, accounts, ledger logic, or membership mutation.
+
+Final Docker verification passes with 229 tests, 1,116 assertions, 0 failures,
+and 0 skipped tests. Pint, Blade cache, Vite build, Composer validation/audit,
+npm audit, migration status, and diff checks pass. The development financial
+state remains 58,000 cached/account/ledger net with 4 deposits, 0 withdrawals,
+4 ledger entries, 3 accounts, and reconciliation MATCH. The 10,400 manual QA
+deposit described above is the only intentional delta from the earlier 47,600
+baseline. P2.2D added no production financial data.
+
+The user supplied manual evidence that scanner startup works in the tested
+environment. Exact browser/device details and full Android/iOS/printed-QR
+coverage were not available, so those environments remain documented as
+untested rather than claimed as passed. P2.2 is closed; no next phase was
+started.
 
 ### P2.1D Phase 3 --- Financial Hardening and Concurrency Readiness
 

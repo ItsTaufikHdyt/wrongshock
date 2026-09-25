@@ -7,11 +7,13 @@ use App\Models\WasteBank;
 use App\Models\WasteBankMember;
 use App\Models\WasteBankStaff;
 use App\Services\CitizenIdentityService;
+use App\Services\DepositService;
 use App\Services\MemberResolutionResult;
 use App\Services\MemberResolutionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -87,12 +89,123 @@ class MemberResolutionTest extends TestCase
         $user = $this->citizen('Rotating Citizen', $bank);
         $identity = app(CitizenIdentityService::class);
         $oldPayload = $identity->qrPayload($user);
+        $before = $this->state();
+
+        $this->assertSame(MemberResolutionResult::ELIGIBLE, app(MemberResolutionService::class)->resolveQr($oldPayload, $admin)->status);
         $identity->rotateQrToken($user);
 
         $this->assertSame(MemberResolutionResult::MEMBER_NOT_FOUND, app(MemberResolutionService::class)->resolveQr($oldPayload, $admin)->status);
         $this->assertSame(MemberResolutionResult::ELIGIBLE, app(MemberResolutionService::class)->resolveQr($identity->qrPayload($user), $admin)->status);
+        $this->assertSame($user->number, $user->refresh()->number);
+        $this->assertSame($before, $this->state());
         $this->assertSame(MemberResolutionResult::INVALID_QR, app(MemberResolutionService::class)->resolveQr('https://example.test/member/1', $admin)->status);
         $this->assertSame(MemberResolutionResult::INVALID_QR, app(MemberResolutionService::class)->resolveQr('WRG:M:short', $admin)->status);
+    }
+
+    public function test_eligible_qr_converges_on_existing_deposit_service_and_bank_account(): void
+    {
+        [$admin, $bank] = $this->adminAndBanks();
+        $user = $this->citizen('Deposit Seam Citizen', $bank);
+        $payload = app(CitizenIdentityService::class)->qrPayload($user);
+        $itemId = DB::table('waste_items')->insertGetId([
+            'category' => 'Seam Item',
+            'output' => 'Kriya',
+            'unit' => 'Kilogram (Kg)',
+            'price' => 4000,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $resolved = app(MemberResolutionService::class)->resolveQr($payload, $admin);
+        $deposit = app(DepositService::class)->post(
+            $resolved->user->id,
+            now()->toDateString(),
+            [['waste_item_id' => $itemId, 'quantity' => '2.500']],
+            $admin->id,
+            $bank,
+        );
+
+        $this->assertTrue($resolved->eligible());
+        $this->assertSame($user->id, $deposit->user_id);
+        $this->assertSame($bank->id, $deposit->waste_bank_id);
+        $this->assertSame(10000, $deposit->total_amount);
+        $this->assertDatabaseHas('waste_bank_accounts', ['user_id' => $user->id, 'waste_bank_id' => $bank->id, 'balance' => 10000]);
+        $this->assertDatabaseHas('account_ledger_entries', ['user_id' => $user->id, 'waste_bank_id' => $bank->id, 'amount' => 10000]);
+    }
+
+    public function test_wrong_bank_qr_and_forged_user_id_cannot_create_financial_state(): void
+    {
+        [$adminA, $bankA, $bankB, $adminB] = $this->adminAndThreeBanks();
+        $user = $this->citizen('Wrong Bank Citizen', $bankA);
+        $payload = app(CitizenIdentityService::class)->qrPayload($user);
+        $itemId = DB::table('waste_items')->insertGetId([
+            'category' => 'Wrong Bank Item',
+            'output' => 'Kriya',
+            'unit' => 'Kilogram (Kg)',
+            'price' => 4000,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $before = $this->state();
+
+        $this->assertSame(MemberResolutionResult::MEMBERSHIP_NOT_FOUND, app(MemberResolutionService::class)->resolveQr($payload, $adminB)->status);
+
+        $this->expectException(ValidationException::class);
+        try {
+            app(DepositService::class)->post(
+                $user->id,
+                now()->toDateString(),
+                [['waste_item_id' => $itemId, 'quantity' => '1']],
+                $adminB->id,
+                $bankB,
+            );
+        } finally {
+            $this->assertSame($before, $this->state());
+        }
+    }
+
+    public function test_inactive_bank_and_malformed_payloads_are_rejected_without_selection(): void
+    {
+        [$admin, $bank] = $this->adminAndBanks();
+        $user = $this->citizen('Hardened QR Citizen', $bank);
+        $identity = app(CitizenIdentityService::class);
+
+        $bank->update(['status' => false]);
+        $this->assertSame(MemberResolutionResult::BANK_INACTIVE, app(MemberResolutionService::class)->resolveQr($identity->qrPayload($user), $admin)->status);
+
+        $bank->update(['status' => true]);
+        foreach ([
+            '',
+            ' ',
+            'random text',
+            'https://example.test/pay',
+            'WRG:',
+            'WRG:M:',
+            'WRG:X:'.str_repeat('A', 32),
+            'WRG:M:'.str_repeat('A', 32).':extra',
+            str_repeat('A', 129),
+        ] as $payload) {
+            $this->assertSame(MemberResolutionResult::INVALID_QR, app(MemberResolutionService::class)->resolveQr($payload, $admin)->status);
+        }
+
+        $this->assertSame(MemberResolutionResult::MEMBER_NOT_FOUND, app(MemberResolutionService::class)->resolveQr('WRG:M:'.str_repeat('A', 32), $admin)->status);
+    }
+
+    public function test_manual_lookup_excludes_ineligible_duplicate_names_but_keeps_member_number_as_string(): void
+    {
+        [$admin, $bank] = $this->adminAndBanks();
+        $eligible = $this->citizen('Duplicate Name', $bank);
+        $inactiveMembership = $this->citizen('Duplicate Name', $bank, 'inactive');
+        $inactiveUser = $this->citizen('Duplicate Name', $bank);
+        $inactiveUser->forceFill(['status' => 0])->save();
+
+        $results = app(MemberResolutionService::class)->search('Duplicate Name', $admin);
+
+        $this->assertSame([$eligible->id], $results->pluck('id')->all());
+        $this->assertIsString($eligible->refresh()->number);
+        $this->assertStringStartsWith('001', $eligible->number);
+        $this->assertNotContains($inactiveMembership->id, $results->pluck('id')->all());
+        $this->assertNotContains($inactiveUser->id, $results->pluck('id')->all());
     }
 
     public function test_http_resolver_returns_minimal_member_data_and_uses_authenticated_bank_context(): void

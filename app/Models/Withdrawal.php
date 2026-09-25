@@ -25,6 +25,12 @@ class Withdrawal extends Model
 
     protected static function booted(): void
     {
+        static::updating(function (self $withdrawal): void {
+            if ($withdrawal->isDirty('waste_bank_id')) {
+                throw new \LogicException('Withdrawal bank ownership cannot be changed.');
+            }
+        });
+
         static::deleting(function (self $withdrawal): void {
             throw new \LogicException('Withdrawal history cannot be deleted.');
         });

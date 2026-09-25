@@ -17,9 +17,9 @@
                         <x-filament::icon icon="heroicon-o-wallet" />
                     </span>
                     <div>
-                        <p id="balance-heading">Saldo Tabungan</p>
+                        <p id="balance-heading">Total Saldo</p>
                         <strong>{{ $this->formatRupiah($user->balance) }}</strong>
-                        <span>Saldo tabungan sampah Anda saat ini</span>
+                        <span>Total saldo dari seluruh Bank Sampah</span>
                     </div>
                 </div>
                 <span class="ws-balance-leaf ws-balance-leaf-one" aria-hidden="true"></span>
@@ -45,6 +45,32 @@
                         <x-filament::icon icon="heroicon-m-chevron-right" class="ws-action-arrow" aria-hidden="true" />
                     </a>
                 </div>
+            </div>
+        </section>
+
+        <section class="ws-content-section" aria-labelledby="bank-balances-heading">
+            <div class="ws-section-heading">
+                <div>
+                    <h2 id="bank-balances-heading">Saldo per Bank Sampah</h2>
+                    <p>Saldo tetap tersimpan meski keanggotaan menjadi nonaktif.</p>
+                </div>
+            </div>
+            <div class="ws-card-list">
+                @forelse ($accounts as $account)
+                    <article class="ws-transaction-card">
+                        <div class="ws-transaction-body">
+                            <div class="ws-transaction-head">
+                                <div>
+                                    <h3>{{ $account->wasteBank->name }}</h3>
+                                    <p>{{ $account->wasteBank->code }}</p>
+                                </div>
+                                <strong>{{ $this->formatRupiah($account->balance) }}</strong>
+                            </div>
+                        </div>
+                    </article>
+                @empty
+                    <div class="ws-empty-state"><h3>Belum ada saldo per bank</h3></div>
+                @endforelse
             </div>
         </section>
 

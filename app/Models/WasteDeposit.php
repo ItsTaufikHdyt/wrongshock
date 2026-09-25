@@ -14,6 +14,12 @@ class WasteDeposit extends Model
                 throw new LogicException('Posted or cancelled deposits cannot be deleted.');
             }
         });
+
+        static::updating(function (WasteDeposit $deposit): void {
+            if ($deposit->isDirty('waste_bank_id') && in_array($deposit->status, ['posted', 'cancelled'], true)) {
+                throw new LogicException('Posted deposit bank ownership cannot be changed.');
+            }
+        });
     }
 
     protected $table = 'waste_deposits';

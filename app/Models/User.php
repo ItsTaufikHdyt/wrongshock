@@ -124,6 +124,11 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(LedgerEntry::class, 'user_id');
     }
 
+    public function wasteBankAccounts()
+    {
+        return $this->hasMany(WasteBankAccount::class);
+    }
+
     public function bankMemberships()
     {
         return $this->hasMany(WasteBankMember::class);

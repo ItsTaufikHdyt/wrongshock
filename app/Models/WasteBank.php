@@ -89,6 +89,11 @@ class WasteBank extends Model
         return $this->hasMany(WasteDeposit::class);
     }
 
+    public function accounts()
+    {
+        return $this->hasMany(WasteBankAccount::class);
+    }
+
     public function withdrawals()
     {
         return $this->hasMany(Withdrawal::class);

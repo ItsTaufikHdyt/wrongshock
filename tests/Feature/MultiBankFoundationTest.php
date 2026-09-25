@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Filament\Resources\WasteDepositResource;
 use App\Models\User;
 use App\Models\WasteBank;
+use App\Models\WasteBankAccount;
 use App\Models\WasteBankMember;
 use App\Models\WasteDeposit;
 use App\Models\WasteItem;
@@ -157,6 +158,9 @@ class MultiBankFoundationTest extends TestCase
         $adminA = $this->admin('a@example.test', $bankA);
         $adminB = $this->admin('b@example.test', $bankB);
         $citizen = $this->citizen(100000);
+        $account = WasteBankAccount::query()->where('user_id', $citizen->id)->where('waste_bank_id', $bankA->id)->first() ?? new WasteBankAccount;
+        $account->forceFill(['user_id' => $citizen->id, 'waste_bank_id' => $bankA->id]);
+        $account->forceFill(['balance' => 100000])->save();
 
         $withdrawal = app(WithdrawalService::class)->request($citizen->id, 10000, $adminA->id);
         $this->assertSame($bankA->id, $withdrawal->waste_bank_id);
@@ -197,6 +201,10 @@ class MultiBankFoundationTest extends TestCase
                 'joined_at' => now(),
                 'status' => 'active',
             ]);
+        }
+        if ($balance > 0) {
+            $account = new WasteBankAccount;
+            $account->forceFill(['user_id' => $user->id, 'waste_bank_id' => WasteBank::query()->orderBy('id')->value('id'), 'balance' => $balance])->save();
         }
 
         return $user;

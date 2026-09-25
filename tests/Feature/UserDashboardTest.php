@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Models\WasteBank;
 use App\Models\WasteDeposit;
 use App\Models\WasteDepositItem;
 use App\Models\WasteItem;
@@ -173,6 +174,7 @@ class UserDashboardTest extends TestCase
         $deposit = new WasteDeposit;
         $deposit->forceFill([
             'user_id' => $user->id,
+            'waste_bank_id' => WasteBank::factory()->create()->id,
             'deposit_date' => $date,
             'total_amount' => $subtotal,
             'status' => $status,

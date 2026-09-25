@@ -6,6 +6,7 @@ use App\Http\Middleware\EnsureActiveUser;
 use App\Models\LedgerEntry;
 use App\Models\User;
 use App\Models\WasteBank;
+use App\Models\WasteBankAccount;
 use App\Models\WasteBankMember;
 use App\Models\WasteDeposit;
 use App\Models\WasteItem;
@@ -102,6 +103,10 @@ class AuthorizationTest extends TestCase
         $deposit = new WasteDeposit;
         $deposit->forceFill([
             'user_id' => $second->id,
+            'waste_bank_id' => WasteBank::query()->firstOrCreate(
+                ['code' => 'BS001'],
+                ['name' => 'Test Bank Sampah', 'status' => true],
+            )->id,
             'deposit_date' => today(),
             'total_amount' => 100,
             'status' => 'posted',
@@ -110,6 +115,10 @@ class AuthorizationTest extends TestCase
         $withdrawal = new Withdrawal;
         $withdrawal->forceFill([
             'user_id' => $second->id,
+            'waste_bank_id' => WasteBank::query()->firstOrCreate(
+                ['code' => 'BS001'],
+                ['name' => 'Test Bank Sampah', 'status' => true],
+            )->id,
             'amount' => 100,
             'status' => 'pending',
             'withdrawal_date' => today(),
@@ -223,6 +232,10 @@ class AuthorizationTest extends TestCase
         $entry = new LedgerEntry;
         $entry->forceFill([
             'user_id' => $admin->id,
+            'waste_bank_id' => WasteBank::query()->firstOrCreate(
+                ['code' => 'BS001'],
+                ['name' => 'Test Bank Sampah', 'status' => true],
+            )->id,
             'type' => 'opening_balance',
             'direction' => 'credit',
             'amount' => 100,
@@ -326,6 +339,10 @@ class AuthorizationTest extends TestCase
                 'joined_at' => now(),
                 'status' => 'active',
             ]);
+            if ($balance > 0) {
+                $account = new WasteBankAccount;
+                $account->forceFill(['user_id' => $user->id, 'waste_bank_id' => $bank->id, 'balance' => $balance])->save();
+            }
         }
 
         return $user->refresh();

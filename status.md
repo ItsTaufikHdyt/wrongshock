@@ -2,7 +2,7 @@
 
 ## Overall
 
-**Current status: P2.1B.2 COMPLETE / Admin Sidebar UX Fix COMPLETE / P2.2 NOT STARTED / P1.8 NOT STARTED / M8 COMPLETE**
+**Current status: P2.1D Phase 3 VERIFIED / P2.2 NOT STARTED / P1.8 NOT STARTED / M8 COMPLETE**
 
 This document tracks implementation against `prd.md`. It must be updated
 after every meaningful coding session.
@@ -122,14 +122,15 @@ and no business behavior was changed in M0.
 ### Current Financial Mutation Flow
 
 Filament Create -> `DepositService::post()` validates input and resolves
-masters -> `DB::transaction` creates a posted deposit, item snapshots, one
-`deposit_credit` ledger entry, and atomically increments the locked user's
-cached balance. UI subtotal/total remain preview-only. The former
+masters -> `DB::transaction` locks the User and User + WasteBank account,
+creates a posted deposit, item snapshots, one bank-owned `deposit_credit`
+ledger entry, and synchronizes the aggregate cached balance. UI subtotal/total remain preview-only. The former
 `WasteDepositObserver` registration and financial mutation were removed.
-`DepositService::cancel()` locks the deposit and owner, validates the original
-credit, creates one reversal debit, decrements cached balance, and marks the
-deposit cancelled atomically. `WithdrawalService` owns request, approval, and
-rejection; only approval creates a debit and decrements cached balance.
+`DepositService::cancel()` locks the deposit, owner, and original bank
+account, validates the original credit, creates one bank-owned reversal debit,
+decrements that account, and marks the deposit cancelled atomically.
+`WithdrawalService` owns request, approval, and rejection; only approval
+creates a bank-owned debit and decrements the selected bank account.
 
 ### M1 --- Schema & Model Consistency
 
@@ -251,6 +252,58 @@ Waste Bank forms edit bank attributes only. Staff assignment is managed through
 the `waste_bank_staff` relation and centralized admin assignment services.
 Per-bank balance is approved for P2.1D but is not implemented in P2.1C; legacy
 global financial behavior remains unchanged until that phase.
+
+### P2.1D Phase 1 --- Per-Bank Financial Foundation
+
+Status: COMPLETE. Added shadow per-user/per-bank financial accounts, nullable
+direct ledger bank ownership, safe ledger attribution diagnostics, controlled
+ledger/account backfills, and per-bank plus aggregate reconciliation reports.
+The current deposit, cancellation, withdrawal, pending, and `users.balance`
+write paths were unchanged during Phase 1; they are now cut over in Phase 2.
+
+The current development database backfilled 2 derivable ledger entries and 7
+accounts, with 6 zero-balance accounts. Ledger net, legacy cached balance, and
+aggregate account balance remain `23,300`; all per-bank and aggregate reports
+match. Attribution and account backfills are idempotent. Phase 2 switches
+financial services to account-row locking and bank-owned ledger writes while
+preserving pending-withdrawal non-reservation semantics.
+
+### P2.1D Phase 2 --- Live Per-Bank Financial Cutover
+
+Status: IMPLEMENTED / VERIFIED. Deposit posting, deposit
+cancellation, withdrawal request/approval, aggregate cache synchronization,
+bank-specific membership enforcement, transaction bank immutability, and
+per-bank repair logic now use `WasteBankAccount` rows and bank-owned ledger
+entries. Pending withdrawals remain non-reserving; approval rechecks the
+locked bank account. The lock order is source transaction when present,
+then User, then User + WasteBank account; new deposits use User then account.
+
+Withdrawal selectors use active membership in the current bank and display
+the bank-specific balance. Citizen and admin displays distinguish aggregate
+balance from per-bank balances. Phase 2 regression coverage was added for
+deposit/withdrawal isolation, cancellation isolation, inactive membership,
+and aggregate synchronization.
+
+The host has no `php` executable, but all verification ran in the project
+Docker app container. No development financial data was changed by Phase 2
+code or tests.
+
+### P2.1D Phase 3 --- Financial Hardening and Concurrency Readiness
+
+Status: VERIFIED. Deposit, withdrawal, and ledger bank ownership is now
+database-enforced as non-null; per-bank account balances are non-null and
+cannot be negative on MySQL. Ledger financial fields are immutable after
+creation and ledger deletion is blocked. Global automatic opening-balance
+creation is disabled; reconciliation repair only uses existing ledger facts
+and aborts on negative bank nets. Source transaction bank ownership is
+immutable, and explicit hardening tests cover these rules.
+
+The development database was migrated without changing financial values:
+ledger net, cached balance total, and per-bank account total remain `23,300`.
+The full suite passes in Docker: 206 tests and 1,017 assertions. Targeted
+Pint passes for all changed Phase 3 files. Parallel MySQL execution is not
+claimed by the SQLite/sequential test suite; the locking contract remains
+documented as source-order User then User + WasteBank account.
 
 ### Citizen Registration -> Membership
 
@@ -515,9 +568,10 @@ authorization remain unchanged.
 
 ## Current Known Risks
 
-1.  Cancellation is blocked when cached balance is below the reversal amount.
-2.  Pending withdrawals do not reserve balance; approval rechecks the cached
-    balance under the user row lock.
+1.  Cancellation is blocked when the original bank account is below the
+    reversal amount.
+2.  Pending withdrawals do not reserve balance; approval rechecks the
+    bank account under the User and account row locks.
 3.  Request-level idempotency keys are not implemented.
 4.  Future ledger types require the same direction-based reconciliation rules.
 

@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\LedgerEntry;
 use App\Models\User;
+use App\Models\WasteBank;
+use App\Models\WasteBankAccount;
 use App\Models\WasteBankMember;
 use App\Models\WasteDeposit;
 use App\Models\WasteItem;
@@ -14,6 +16,7 @@ use App\Services\WithdrawalService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use LogicException;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -36,6 +39,7 @@ class BalanceReconciliationTest extends TestCase
         $user = $this->createUser(100000);
         $this->createLedger([
             'user_id' => $user->id,
+            'waste_bank_id' => $this->bank()->id,
             'type' => 'opening_balance',
             'direction' => 'credit',
             'amount' => 100000,
@@ -60,37 +64,17 @@ class BalanceReconciliationTest extends TestCase
         $this->assertSame('OPENING_BALANCE_CANDIDATE', $result['status']);
     }
 
-    public function test_opening_balance_creation_does_not_change_cached_balance(): void
+    public function test_global_opening_balance_creation_is_disabled(): void
     {
-        $user = $this->createUser(100000);
-
-        $summary = $this->service->createOpeningBalances();
-
-        $this->assertSame(['created' => 1, 'skipped' => 0, 'review' => 0], $summary);
-        $this->assertSame(100000, $user->refresh()->balance);
-        $this->assertDatabaseHas('account_ledger_entries', [
-            'user_id' => $user->id,
-            'type' => 'opening_balance',
-            'direction' => 'credit',
-            'amount' => 100000,
-            'reference_type' => User::class,
-            'reference_id' => $user->id,
-        ]);
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Global opening balance creation is disabled');
+        $this->service->createOpeningBalances();
     }
 
-    public function test_opening_balance_creation_is_idempotent(): void
+    public function test_global_opening_balance_creation_cannot_be_reenabled(): void
     {
-        $user = $this->createUser(100000);
-
+        $this->expectException(LogicException::class);
         $this->service->createOpeningBalances();
-        $second = $this->service->createOpeningBalances();
-
-        $this->assertSame(['created' => 0, 'skipped' => 1, 'review' => 0], $second);
-        $this->assertSame(1, LedgerEntry::query()
-            ->where('user_id', $user->id)
-            ->where('type', 'opening_balance')
-            ->count());
-        $this->assertSame(100000, $user->refresh()->balance);
     }
 
     public function test_zero_balance_is_a_match_without_zero_entry(): void
@@ -98,10 +82,7 @@ class BalanceReconciliationTest extends TestCase
         $user = $this->createUser(0);
 
         $result = $this->service->reconcileUser($user);
-        $summary = $this->service->createOpeningBalances();
-
         $this->assertSame('MATCH', $result['status']);
-        $this->assertSame(['created' => 0, 'skipped' => 1, 'review' => 0], $summary);
         $this->assertDatabaseCount('account_ledger_entries', 0);
     }
 
@@ -111,6 +92,7 @@ class BalanceReconciliationTest extends TestCase
         $deposit = new WasteDeposit;
         $deposit->forceFill([
             'user_id' => $user->id,
+            'waste_bank_id' => $this->bank()->id,
             'deposit_date' => '2026-09-21',
             'total_amount' => 100,
             'status' => 'posted',
@@ -119,10 +101,7 @@ class BalanceReconciliationTest extends TestCase
         $deposit->save();
 
         $result = $this->service->reconcileUser($user);
-        $summary = $this->service->createOpeningBalances();
-
         $this->assertSame('MISMATCH_REQUIRES_REVIEW', $result['status']);
-        $this->assertSame(['created' => 0, 'skipped' => 0, 'review' => 1], $summary);
     }
 
     public function test_existing_withdrawal_history_requires_review(): void
@@ -131,6 +110,7 @@ class BalanceReconciliationTest extends TestCase
         $withdrawal = new Withdrawal;
         $withdrawal->forceFill([
             'user_id' => $user->id,
+            'waste_bank_id' => $this->bank()->id,
             'amount' => 100,
             'status' => 'rejected',
             'withdrawal_date' => today(),
@@ -150,6 +130,7 @@ class BalanceReconciliationTest extends TestCase
         $user = $this->createUser(100000);
         $this->createLedger([
             'user_id' => $user->id,
+            'waste_bank_id' => $this->bank()->id,
             'type' => 'deposit_credit',
             'direction' => 'credit',
             'amount' => 50000,
@@ -157,10 +138,7 @@ class BalanceReconciliationTest extends TestCase
         ]);
 
         $result = $this->service->reconcileUser($user);
-        $summary = $this->service->createOpeningBalances();
-
         $this->assertSame('MISMATCH_REQUIRES_REVIEW', $result['status']);
-        $this->assertSame(['created' => 0, 'skipped' => 0, 'review' => 1], $summary);
     }
 
     public function test_default_command_is_read_only(): void
@@ -176,11 +154,15 @@ class BalanceReconciliationTest extends TestCase
     public function test_explicit_cache_repair_uses_existing_ledger_without_new_entry(): void
     {
         $user = $this->createUser(90000);
+        $bank = WasteBank::query()->create(['code' => 'BS-REPAIR', 'name' => 'Repair Bank', 'status' => true]);
+        $account = new WasteBankAccount;
+        $account->forceFill(['user_id' => $user->id, 'waste_bank_id' => $bank->id, 'balance' => 0])->save();
         $this->createLedger([
             'user_id' => $user->id,
             'type' => 'opening_balance',
             'direction' => 'credit',
             'amount' => 100000,
+            'waste_bank_id' => $bank->id,
             'reference_type' => User::class,
             'reference_id' => $user->id,
             'description' => 'Opening balance',
@@ -190,6 +172,7 @@ class BalanceReconciliationTest extends TestCase
 
         $this->assertSame(['repaired' => 1, 'skipped' => 0, 'review' => 0], $summary);
         $this->assertSame(100000, $user->refresh()->balance);
+        $this->assertSame(100000, $account->refresh()->balance);
         $this->assertDatabaseCount('account_ledger_entries', 1);
     }
 
@@ -198,6 +181,7 @@ class BalanceReconciliationTest extends TestCase
         $user = $this->createUser(0);
         $this->createLedger([
             'user_id' => $user->id,
+            'waste_bank_id' => $this->bank()->id,
             'type' => 'withdrawal_debit',
             'direction' => 'debit',
             'amount' => 10000,
@@ -205,10 +189,14 @@ class BalanceReconciliationTest extends TestCase
         ]);
 
         $result = $this->service->reconcileUser($user);
-        $summary = $this->service->repairCache();
+        try {
+            $this->service->repairCache();
+            $this->fail('Unsafe bank attribution should abort cache repair.');
+        } catch (LogicException $exception) {
+            $this->assertSame('Cache repair aborted: ledger bank attribution is incomplete or inconsistent.', $exception->getMessage());
+        }
 
         $this->assertSame('MISMATCH_REQUIRES_REVIEW', $result['status']);
-        $this->assertSame(['repaired' => 0, 'skipped' => 0, 'review' => 1], $summary);
         $this->assertSame(0, $user->refresh()->balance);
     }
 
@@ -223,7 +211,6 @@ class BalanceReconciliationTest extends TestCase
             'price' => 25000,
         ]);
 
-        $this->service->createOpeningBalances();
         $first = app(DepositService::class)->post($user->id, '2026-09-21', [
             ['waste_item_id' => $item->id, 'quantity' => '1.000'],
         ], $this->operator->id);
@@ -254,7 +241,6 @@ class BalanceReconciliationTest extends TestCase
             'price' => 10000,
         ]);
 
-        $this->service->createOpeningBalances();
         $this->assertReconciled($user, 100000);
 
         $depositA = app(DepositService::class)->post($user->id, today()->toDateString(), [
@@ -295,8 +281,6 @@ class BalanceReconciliationTest extends TestCase
     {
         $user = $this->createUser(100000, true);
         Auth::login($this->operator);
-        $this->service->createOpeningBalances();
-
         $withdrawal = app(WithdrawalService::class)->request($user->id, 40000, $this->operator->id);
         $rejected = app(WithdrawalService::class)->reject($withdrawal, 'Incomplete account details', $this->operator->id);
 
@@ -353,6 +337,20 @@ class BalanceReconciliationTest extends TestCase
             'joined_at' => now(),
             'status' => 'active',
         ]);
+        $account = new WasteBankAccount;
+        $account->forceFill(['user_id' => $user->id, 'waste_bank_id' => $bank->id, 'balance' => $balance])->save();
+        if ($balance > 0) {
+            $this->createLedger([
+                'user_id' => $user->id,
+                'waste_bank_id' => $bank->id,
+                'type' => 'opening_balance',
+                'direction' => 'credit',
+                'amount' => $balance,
+                'reference_type' => User::class,
+                'reference_id' => $user->id,
+                'description' => 'Bank-specific test opening balance',
+            ]);
+        }
 
         return $user;
     }
@@ -363,6 +361,14 @@ class BalanceReconciliationTest extends TestCase
         $entry->forceFill($attributes)->save();
 
         return $entry;
+    }
+
+    private function bank(): WasteBank
+    {
+        return WasteBank::query()->firstOrCreate(
+            ['code' => 'BS001'],
+            ['name' => 'Reconciliation Bank', 'status' => true],
+        );
     }
 
     private function assertReconciled(User $user, int $expectedBalance): void

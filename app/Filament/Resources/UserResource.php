@@ -7,6 +7,7 @@ use App\Models\District;
 use App\Models\SubDistrict;
 use App\Models\User;
 use App\Models\WasteBank;
+use App\Models\WasteBankAccount;
 use App\Models\WasteBankMember;
 use App\Services\BankMembershipService;
 use App\Services\WasteBankContext;
@@ -228,10 +229,25 @@ class UserResource extends Resource
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('balance')
-                    ->label('Saldo')
+                    ->label(fn (): string => auth()->user()?->isBankAdmin() ? 'Saldo Bank Saat Ini' : 'Total Saldo')
                     ->sortable()
                     ->searchable()
-                    ->formatStateUsing(fn ($state) => $state !== null ? 'Rp '.number_format($state, 0, '', '.') : ''),
+                    ->state(fn (User $record) => auth()->user()?->isBankAdmin()
+                        ? WasteBankAccount::query()
+                            ->where('user_id', $record->id)
+                            ->where('waste_bank_id', app(WasteBankContext::class)->current()->id)
+                            ->value('balance')
+                        : $record->balance)
+                    ->formatStateUsing(fn ($state) => $state !== null ? 'Rp '.number_format($state, 0, '', '.') : 'Rp 0'),
+                Tables\Columns\TextColumn::make('bank_balances')
+                    ->label('Saldo per Bank Sampah')
+                    ->state(fn (User $record): string => WasteBankAccount::query()
+                        ->where('user_id', $record->id)
+                        ->with('wasteBank')
+                        ->get()
+                        ->map(fn (WasteBankAccount $account): string => $account->wasteBank->code.' Rp '.number_format($account->balance, 0, '', '.'))
+                        ->implode(', '))
+                    ->visible(fn (): bool => auth()->user()?->isPlatformAdmin() ?? false),
             ])
             ->filters([
                 //

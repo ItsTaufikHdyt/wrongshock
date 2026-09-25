@@ -44,10 +44,23 @@ class WithdrawalResource extends Resource
         return $form->schema([
             Forms\Components\Select::make('user_id')
                 ->label('Anggota')
-                ->options(fn () => User::query()
-                    ->whereHas('wasteDeposits', fn ($query) => $query->where('waste_bank_id', app(WasteBankContext::class)->current()->id))
-                    ->orderBy('name')
-                    ->pluck('name', 'id'))
+                ->options(function (): array {
+                    $bankId = app(WasteBankContext::class)->current()->id;
+
+                    return User::query()
+                        ->where('status', 1)
+                        ->whereHas('roles', fn ($query) => $query->where('name', 'user'))
+                        ->whereHas('bankMemberships', fn ($query) => $query
+                            ->where('waste_bank_id', $bankId)
+                            ->where('status', 'active'))
+                        ->with(['wasteBankAccounts' => fn ($query) => $query->where('waste_bank_id', $bankId)])
+                        ->orderBy('name')
+                        ->get()
+                        ->mapWithKeys(fn (User $user): array => [
+                            $user->id => $user->name.' - Rp '.number_format((int) ($user->wasteBankAccounts->first()?->balance ?? 0), 0, ',', '.'),
+                        ])
+                        ->all();
+                })
                 ->searchable()
                 ->required(),
             Forms\Components\TextInput::make('amount')

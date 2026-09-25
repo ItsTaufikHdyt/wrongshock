@@ -45,6 +45,7 @@ class DepositService
             }
 
             $this->assertEligibleMember($user, $wasteBank->id);
+            $account = app(WasteBankAccountService::class)->lockOrCreate($user, $wasteBank);
 
             $itemIds = [];
             foreach ($items as $index => $item) {
@@ -124,6 +125,7 @@ class DepositService
 
             (new LedgerEntry)->forceFill([
                 'user_id' => $user->id,
+                'waste_bank_id' => $wasteBank->id,
                 'type' => 'deposit_credit',
                 'direction' => 'credit',
                 'amount' => $total,
@@ -133,9 +135,8 @@ class DepositService
                 'created_by' => $actorId,
             ])->save();
 
-            // The row lock prevents concurrent deposits for this user from
-            // calculating a cached balance from the same stale value.
-            $user->increment('balance', $total);
+            $account->increment('balance', $total);
+            app(WasteBankAccountService::class)->syncAggregateBalance($user);
 
             return $deposit->load('items');
         });
@@ -172,6 +173,9 @@ class DepositService
                 throw (new ModelNotFoundException)->setModel(User::class, [$actorId]);
             }
 
+            $accountService = app(WasteBankAccountService::class);
+            $account = $accountService->lockExisting($user, $lockedDeposit->waste_bank_id);
+
             $credit = LedgerEntry::query()
                 ->where('user_id', $user->id)
                 ->where('reference_type', WasteDeposit::class)
@@ -180,29 +184,38 @@ class DepositService
                 ->lockForUpdate()
                 ->first();
 
-            if (! $credit || $credit->direction !== 'credit' || (int) $credit->amount !== (int) $lockedDeposit->total_amount) {
+            if (
+                ! $credit
+                || $credit->direction !== 'credit'
+                || (int) $credit->waste_bank_id !== (int) $lockedDeposit->waste_bank_id
+                || (int) $credit->amount !== (int) $lockedDeposit->total_amount
+            ) {
                 throw new \LogicException('The original deposit credit is missing or inconsistent.');
             }
 
-            $reversalExists = LedgerEntry::query()
+            $reversal = LedgerEntry::query()
                 ->where('user_id', $user->id)
                 ->where('reference_type', WasteDeposit::class)
                 ->where('reference_id', $lockedDeposit->id)
                 ->where('type', 'deposit_reversal')
                 ->lockForUpdate()
-                ->exists();
+                ->first();
 
-            if ($reversalExists) {
+            if ($reversal) {
+                if ((int) $reversal->waste_bank_id !== (int) $lockedDeposit->waste_bank_id) {
+                    throw new \LogicException('The existing reversal bank does not match the original deposit bank.');
+                }
                 throw new \LogicException('This deposit has already been cancelled.');
             }
 
             $amount = (int) $lockedDeposit->total_amount;
-            if ($amount < 0 || (int) $user->balance < $amount) {
-                throw new \LogicException('The cached balance is insufficient for this reversal.');
+            if ($amount < 0 || (int) $account->balance < $amount) {
+                throw new \LogicException('The bank account balance is insufficient for this reversal.');
             }
 
             (new LedgerEntry)->forceFill([
                 'user_id' => $user->id,
+                'waste_bank_id' => $lockedDeposit->waste_bank_id,
                 'type' => 'deposit_reversal',
                 'direction' => 'debit',
                 'amount' => $amount,
@@ -212,7 +225,8 @@ class DepositService
                 'created_by' => $actorId,
             ])->save();
 
-            $user->decrement('balance', $amount);
+            $account->decrement('balance', $amount);
+            $accountService->syncAggregateBalance($user);
 
             $lockedDeposit->forceFill([
                 'status' => 'cancelled',

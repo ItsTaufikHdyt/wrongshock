@@ -22,9 +22,9 @@ class DatabaseSeeder extends Seeder
             WasteItemSeeder::class,
         ]);
 
-        if (app()->environment(['local', 'testing'])) {
-            $this->call(DemoUserSeeder::class);
-        }
+        // if (app()->environment(['local', 'testing'])) {
+        //     $this->call(DemoUserSeeder::class);
+        // }
         // Contoh: $this->call(AnotherSeeder::class);
     }
 }

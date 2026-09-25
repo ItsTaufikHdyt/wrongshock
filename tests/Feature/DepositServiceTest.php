@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Filament\Resources\WasteDepositResource;
 use App\Models\LedgerEntry;
 use App\Models\User;
+use App\Models\WasteBankAccount;
 use App\Models\WasteDeposit;
 use App\Models\WasteItem;
 use App\Services\DepositService;
@@ -367,6 +368,7 @@ class DepositServiceTest extends TestCase
         $draft = new WasteDeposit;
         $draft->forceFill([
             'user_id' => $this->user->id,
+            'waste_bank_id' => DB::table('waste_banks')->value('id'),
             'deposit_date' => '2026-09-21',
             'total_amount' => 0,
             'status' => 'draft',
@@ -414,6 +416,12 @@ class DepositServiceTest extends TestCase
             'posted_at' => now(),
         ]);
         $deposit->save();
+        $account = new WasteBankAccount;
+        $account->forceFill([
+            'user_id' => $this->user->id,
+            'waste_bank_id' => $deposit->waste_bank_id,
+            'balance' => 0,
+        ])->save();
 
         try {
             app(DepositService::class)->cancel($deposit, 'Missing credit test');
@@ -451,13 +459,14 @@ class DepositServiceTest extends TestCase
         $deposit = app(DepositService::class)->post($this->user->id, '2026-09-21', [
             ['waste_item_id' => $this->wasteItem->id, 'quantity' => '2.000'],
         ]);
+        WasteBankAccount::query()->where('user_id', $this->user->id)->update(['balance' => 5000]);
         $this->user->forceFill(['balance' => 5000])->save();
 
         try {
             app(DepositService::class)->cancel($deposit, 'Insufficient balance test');
             $this->fail('Cancellation should fail with insufficient cached balance.');
         } catch (LogicException $exception) {
-            $this->assertSame('The cached balance is insufficient for this reversal.', $exception->getMessage());
+            $this->assertSame('The bank account balance is insufficient for this reversal.', $exception->getMessage());
         }
 
         $this->assertSame('posted', $deposit->fresh()->status);

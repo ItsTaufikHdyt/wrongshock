@@ -26,8 +26,10 @@ class WithdrawalService
             }
 
             $this->assertActorExists($actorId);
-            if ((int) $user->balance < $amount) {
-                $this->fail('amount', 'The withdrawal amount exceeds the available cached balance.');
+            $this->assertEligibleMember($user, $wasteBank->id);
+            $account = app(WasteBankAccountService::class)->lockOrCreate($user, $wasteBank);
+            if ((int) $account->balance < $amount) {
+                $this->fail('amount', 'The withdrawal amount exceeds the available bank balance.');
             }
 
             $withdrawal = new Withdrawal;
@@ -63,25 +65,32 @@ class WithdrawalService
                 throw (new ModelNotFoundException)->setModel(User::class, [$lockedWithdrawal->user_id]);
             }
 
-            $debitExists = LedgerEntry::query()
+            $this->assertEligibleMember($user, $lockedWithdrawal->waste_bank_id);
+            $account = app(WasteBankAccountService::class)->lockOrCreate($user, $lockedWithdrawal->waste_bank_id);
+
+            $debit = LedgerEntry::query()
                 ->where('user_id', $user->id)
                 ->where('reference_type', Withdrawal::class)
                 ->where('reference_id', $lockedWithdrawal->id)
                 ->where('type', 'withdrawal_debit')
                 ->lockForUpdate()
-                ->exists();
+                ->first();
 
-            if ($debitExists) {
+            if ($debit) {
+                if ((int) $debit->waste_bank_id !== (int) $lockedWithdrawal->waste_bank_id) {
+                    throw new \LogicException('The existing withdrawal debit bank does not match the withdrawal bank.');
+                }
                 throw new \LogicException('This withdrawal already has a debit.');
             }
 
             $amount = $this->normalizeAmount($lockedWithdrawal->amount);
-            if ((int) $user->balance < $amount) {
-                throw new \LogicException('The cached balance is insufficient for this withdrawal.');
+            if ((int) $account->balance < $amount) {
+                throw new \LogicException('The bank account balance is insufficient for this withdrawal.');
             }
 
             (new LedgerEntry)->forceFill([
                 'user_id' => $user->id,
+                'waste_bank_id' => $lockedWithdrawal->waste_bank_id,
                 'type' => 'withdrawal_debit',
                 'direction' => 'debit',
                 'amount' => $amount,
@@ -91,7 +100,8 @@ class WithdrawalService
                 'created_by' => $actorId,
             ])->save();
 
-            $user->decrement('balance', $amount);
+            $account->decrement('balance', $amount);
+            app(WasteBankAccountService::class)->syncAggregateBalance($user);
             $lockedWithdrawal->forceFill([
                 'status' => 'approved',
                 'processed_date' => today(),
@@ -144,6 +154,20 @@ class WithdrawalService
     {
         if ($actorId !== null && ! User::query()->find($actorId)) {
             throw (new ModelNotFoundException)->setModel(User::class, [$actorId]);
+        }
+    }
+
+    private function assertEligibleMember(User $user, int $wasteBankId): void
+    {
+        if ((int) $user->status !== 1 || ! $user->hasRole('user') || $user->hasAnyRole(['admin', 'super_admin'])) {
+            $this->fail('user_id', 'Penarikan hanya dapat dicatat untuk akun anggota User yang aktif.');
+        }
+
+        if (! $user->bankMemberships()
+            ->where('waste_bank_id', $wasteBankId)
+            ->where('status', 'active')
+            ->exists()) {
+            $this->fail('user_id', 'Anggota tidak aktif atau tidak terdaftar di bank sampah ini.');
         }
     }
 

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\LedgerEntry;
 use App\Models\User;
+use App\Models\WasteBankAccount;
 use App\Models\Withdrawal;
 use App\Services\WithdrawalService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -21,6 +22,8 @@ class WithdrawalServiceTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
+    private User $admin;
 
     protected function setUp(): void
     {
@@ -48,14 +51,32 @@ class WithdrawalServiceTest extends TestCase
             'status' => 1,
         ]);
         $this->user->forceFill(['balance' => 100000])->save();
-        $this->user->assignRole(Role::findOrCreate('admin', 'web'));
-        $this->assignDefaultWasteBank($this->user);
-        Auth::login($this->user);
+        $this->user->assignRole(Role::findOrCreate('user', 'web'));
+
+        $this->admin = User::create([
+            'name' => 'Withdrawal Admin',
+            'number' => 'WITHDRAWAL-ADMIN-'.uniqid(),
+            'email' => uniqid().'@admin.example.test',
+            'password' => 'password',
+            'district_id' => $districtId,
+            'sub_district_id' => $subDistrictId,
+            'status' => 1,
+        ]);
+        $this->admin->assignRole(Role::findOrCreate('admin', 'web'));
+        $bank = $this->assignDefaultWasteBank($this->admin);
+        $this->user->bankMemberships()->create([
+            'waste_bank_id' => $bank->id,
+            'joined_at' => now(),
+            'status' => 'active',
+        ]);
+        $account = new WasteBankAccount;
+        $account->forceFill(['user_id' => $this->user->id, 'waste_bank_id' => $bank->id, 'balance' => 100000])->save();
+        Auth::login($this->admin);
     }
 
     public function test_request_is_pending_and_has_no_financial_effect(): void
     {
-        $withdrawal = app(WithdrawalService::class)->request($this->user->id, 40000, $this->user->id, 'Need cash');
+        $withdrawal = app(WithdrawalService::class)->request($this->user->id, 40000, $this->admin->id, 'Need cash');
 
         $this->assertSame('pending', $withdrawal->status);
         $this->assertSame(40000, $withdrawal->amount);
@@ -105,7 +126,7 @@ class WithdrawalServiceTest extends TestCase
     {
         $withdrawal = app(WithdrawalService::class)->request($this->user->id, 40000);
 
-        $approved = app(WithdrawalService::class)->approve($withdrawal, $this->user->id);
+        $approved = app(WithdrawalService::class)->approve($withdrawal, $this->admin->id);
 
         $this->assertSame('approved', $approved->status);
         $this->assertNotNull($approved->processed_date);
@@ -117,7 +138,7 @@ class WithdrawalServiceTest extends TestCase
             'amount' => 40000,
             'reference_type' => Withdrawal::class,
             'reference_id' => $withdrawal->id,
-            'created_by' => $this->user->id,
+            'created_by' => $this->admin->id,
         ]);
         $this->assertSame(1, LedgerEntry::query()
             ->where('reference_type', Withdrawal::class)
@@ -138,6 +159,7 @@ class WithdrawalServiceTest extends TestCase
     public function test_approval_rechecks_current_cached_balance(): void
     {
         $withdrawal = app(WithdrawalService::class)->request($this->user->id, 40000);
+        WasteBankAccount::query()->where('user_id', $this->user->id)->update(['balance' => 30000]);
         $this->user->forceFill(['balance' => 30000])->save();
 
         try {
@@ -175,7 +197,7 @@ class WithdrawalServiceTest extends TestCase
     {
         $withdrawal = app(WithdrawalService::class)->request($this->user->id, 40000, null, 'Original note');
 
-        $rejected = app(WithdrawalService::class)->reject($withdrawal, 'Data rekening tidak lengkap', $this->user->id);
+        $rejected = app(WithdrawalService::class)->reject($withdrawal, 'Data rekening tidak lengkap', $this->admin->id);
 
         $this->assertSame('rejected', $rejected->status);
         $this->assertNotNull($rejected->processed_date);

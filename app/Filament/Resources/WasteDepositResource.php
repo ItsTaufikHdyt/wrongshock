@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\WasteDeposit;
 use App\Models\WasteItem;
 use App\Services\DepositService;
+use App\Services\MemberResolutionService;
 use App\Services\WasteBankContext;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -56,29 +57,18 @@ class WasteDepositResource extends Resource
                         Forms\Components\Select::make('user_id')
                             ->searchable()
                             ->label('Anggota')
-                            ->relationship('user', 'name', fn ($query) => $query
-                                ->where('status', 1)
-                                ->whereHas('roles', fn ($roleQuery) => $roleQuery->where('name', 'user'))
-                                ->whereHas('bankMemberships', fn ($membershipQuery) => $membershipQuery
-                                    ->where('waste_bank_id', app(WasteBankContext::class)->current()->id)
-                                    ->where('status', 'active')))
+                            ->relationship('user', 'name', fn ($query) => app(MemberResolutionService::class)
+                                ->scopeEligible($query, app(WasteBankContext::class)->current()))
                             ->getSearchResultsUsing(function ($search) {
-                                return User::query()
-                                    ->where(function ($query) use ($search) {
-                                        $query->where('name', 'like', "%{$search}%")
-                                            ->orWhere('number', 'like', "%{$search}%");
-                                    })
-                                    ->where('status', 1)
-                                    ->whereHas('roles', fn ($query) => $query->where('name', 'user'))
-                                    ->whereHas('bankMemberships', fn ($query) => $query
-                                        ->where('waste_bank_id', app(WasteBankContext::class)->current()->id)
-                                        ->where('status', 'active'))
-                                    ->limit(50)
-                                    ->get()
+                                return app(MemberResolutionService::class)->search($search)
                                     ->mapWithKeys(fn ($user) => [$user->id => "{$user->name} | {$user->number}"]);
                             })
                             ->getOptionLabelFromRecordUsing(fn (User $user): string => "{$user->name} | {$user->number}")
                             ->required(),
+
+                        Forms\Components\ViewField::make('member_scanner')
+                            ->view('filament.forms.member-scanner')
+                            ->dehydrated(false),
 
                         Forms\Components\TextInput::make('deposit_date')
                             ->label('Tanggal Setoran')

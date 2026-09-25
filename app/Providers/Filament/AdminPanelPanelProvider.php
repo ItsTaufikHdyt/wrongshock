@@ -40,6 +40,7 @@ class AdminPanelPanelProvider extends PanelProvider
                 AdminDashboard::class,
             ])
             ->renderHook(PanelsRenderHook::STYLES_BEFORE, fn () => view('filament.admin.hooks.styles'))
+            ->renderHook(PanelsRenderHook::SCRIPTS_AFTER, fn () => view('filament.admin.hooks.scripts'))
             ->renderHook(PanelsRenderHook::SIDEBAR_FOOTER, fn () => view('filament.admin.hooks.sidebar-footer'))
             ->renderHook(PanelsRenderHook::SIDEBAR_NAV_START, fn () => view('filament.admin.hooks.brand'))
             ->renderHook(PanelsRenderHook::TOPBAR_START, fn () => view('filament.admin.hooks.topbar-title'))

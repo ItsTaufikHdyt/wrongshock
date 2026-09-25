@@ -2,7 +2,7 @@
 
 ## Overall
 
-**Current status: P2.2A COMPLETE / P2.2B-C NOT STARTED / P1.8 NOT STARTED / M8 COMPLETE**
+**Current status: P2.2A COMPLETE / P2.2B COMPLETE / P2.2C CODE COMPLETE - MANUAL DEVICE QA PENDING / P1.8 NOT STARTED / M8 COMPLETE**
 
 This document tracks implementation against `prd.md`. It must be updated
 after every meaningful coding session.
@@ -307,13 +307,84 @@ transitions away from `user` retain it.
 Added idempotent `members:backfill-qr` with `--dry-run`, Super Admin-only QR
 rotation in platform user management, and the authenticated citizen `Kartu
 Anggota` page with server-rendered SVG QR. Existing-user membership additions
-reuse the same token and never create bank-specific tokens. No QR resolver,
-deposit integration, camera, or scanner was added; those remain P2.2B/P2.2C.
+reuse the same token and never create bank-specific tokens.
 
 The development migration and backfill generated 3 tokens for 3 citizens with
 0 failures. Financial totals remained 47,600 / 47,600 / 47,600 and all
 reconciliation reports remained MATCH. Full Docker verification passes with
 216 tests, 1,052 assertions, 0 failures, and 0 skipped tests.
+
+### P2.2B --- Member Lookup and QR Resolution
+
+Status: COMPLETE / VERIFIED. Added shared member resolution for exact QR
+payloads and manual member-number/name lookup. Resolution is scoped to the
+authenticated admin's current active bank and requires an active citizen with
+an active membership; role, inactive, foreign-bank, malformed, and rotated QR
+cases return stable safe reason codes.
+
+Added authenticated `POST /admin/member/resolve-qr` with throttling and
+minimal JSON output. The P2.2B deposit form temporarily exposed raw QR input;
+P2.2C removes it from normal production UI and replaces it with camera
+scanning while retaining the same server-validated `user_id` selector.
+Financial posting remains exclusively through `DepositService`. No QR payment,
+login, or withdrawal flow exists.
+
+Focused P2.2B coverage passes with 7 tests. Full Docker verification passes
+with 223 tests, 1,080 assertions, 0 failures, and 0 skipped tests. Pint,
+Blade cache, Vite build, Composer validation, migration status, and diff
+whitespace checks pass. Financial totals remain cached 47,600, ledger net
+47,600, 3 deposits, 0 withdrawals, and reconciliation MATCH.
+
+### P2.2C --- Camera Scanner UX
+
+Status: CODE COMPLETE / VERIFIED IN AUTOMATION; MANUAL DEVICE QA PENDING.
+Added local `html5-qrcode` version `2.3.8` through npm. The dependency is
+loaded dynamically only after an explicit `Scan QR Anggota` action, uses QR-only
+decoding, prefers rear cameras through `environment` facing mode and camera
+labels, and supports zero, one, or multiple cameras with optional selection.
+
+The focused scanner module owns camera permission, start/stop/clear lifecycle,
+responsive modal presentation, explicit states, duplicate-frame locking,
+rapid-start protection, stale-response protection, retry, permission/no-camera
+handling, HTTP authorization/rate-limit/network errors, and HTTPS messaging.
+Decoded payload text is sent unchanged to the P2.2B resolver. An eligible
+response writes the existing Livewire `data.user_id`; invalid scans preserve
+any existing member selection, while replacing a different selected member
+requires explicit confirmation. Closing, successful resolution, navigation,
+and reopen flows release camera resources. Manual member lookup remains
+available. Camera frames stay local and are never uploaded to a third party.
+
+The temporary raw QR input is removed from normal deposit UI; the P2.2B
+endpoint and resolver remain the only resolution path. Image/file scanning,
+torch, zoom, sound, and vibration are deferred. Camera use requires HTTPS or
+localhost. No Android, iOS, desktop webcam, printed QR, or other physical
+camera verification was performed in this environment.
+
+The deposit-form regression and resolver tests pass. Full Docker verification,
+Pint, Blade cache, Vite build, Composer validation/audit, npm audit, migration
+status, and diff checks pass. Financial totals remain cached 47,600, accounts
+47,600, ledger net 47,600, 3 deposits, 0 withdrawals, 3 ledger entries, and
+3 accounts; reconciliation remains MATCH. P2.2D is not started.
+
+#### P2.2C.1 --- Camera Startup Debug
+
+Status: CODE FIXED / DEVICE QA PENDING. The startup failure was caused by the
+scanner reader element having no `id` while `Html5Qrcode` was constructed with
+`this.reader.id`, resulting in an empty DOM target identifier. The reader now
+uses a stable `member-qr-reader` ID and startup verifies that it is mounted and
+visible before construction.
+
+Local/development startup failures now retain the original sanitized browser
+error in `console.error`, including error name/message/stack and local runtime
+diagnostics for secure context, media devices, getUserMedia, URL protocol and
+hostname, without logging QR data. Permission, no-camera, insecure-context,
+and camera-busy errors receive separate user-facing states. The Vite manifest
+confirms `html5-qrcode` is a dynamic local chunk, and runtime module inspection
+confirms `Html5Qrcode` and `QR_CODE` exports.
+
+After the fix, the full suite passes with 224 tests and 1,084 assertions;
+financial totals and reconciliation remain unchanged. Actual camera preview,
+QR scan, close/reopen, and device/browser verification remain pending.
 
 ### P2.1D Phase 3 --- Financial Hardening and Concurrency Readiness
 

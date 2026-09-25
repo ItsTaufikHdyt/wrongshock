@@ -88,6 +88,18 @@ class AdminDepositFormTest extends TestCase
             ->assertSet('data.total_amount', 7500);
     }
 
+    public function test_deposit_form_keeps_manual_member_lookup_and_exposes_camera_scan_action(): void
+    {
+        Filament::setCurrentPanel(Filament::getPanel('adminPanel'));
+
+        Livewire::actingAs($this->createAdmin())
+            ->test(CreateWasteDeposit::class)
+            ->assertSee('Anggota')
+            ->assertSee('Scan QR Anggota')
+            ->assertSee('member-qr-reader')
+            ->assertDontSee('Tempel payload WRG:M:');
+    }
+
     private function createWasteItem(string $category, string $unit, int $price): int
     {
         return DB::table('waste_items')->insertGetId([

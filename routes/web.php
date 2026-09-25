@@ -1,6 +1,7 @@
 <?php
 
 use App\Filament\UserPanel\Pages\UserDashboard;
+use App\Http\Controllers\MemberResolutionController;
 use App\Http\Controllers\RegisterController;
 use App\Models\WasteItem;
 use Filament\Facades\Filament;
@@ -37,3 +38,7 @@ Route::get('/register', [RegisterController::class, 'show'])->name('register');
 Route::post('/storeRegister', [RegisterController::class, 'register'])
     ->middleware('throttle:6,1')
     ->name('user.register');
+
+Route::post('/admin/member/resolve-qr', [MemberResolutionController::class, 'resolveQr'])
+    ->middleware(['auth', 'throttle:30,1'])
+    ->name('admin.member.resolve-qr');

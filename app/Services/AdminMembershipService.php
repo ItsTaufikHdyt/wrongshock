@@ -121,6 +121,7 @@ class AdminMembershipService
             $user->removeRole('super_admin');
             $user->removeRole('admin');
             $user->assignRole(Role::findOrCreate('user', 'web'));
+            app(CitizenIdentityService::class)->ensureQrToken($user->refresh());
             $user->wasteBanksAsStaff()->detach();
 
             return $user->refresh();

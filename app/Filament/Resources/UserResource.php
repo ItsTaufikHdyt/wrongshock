@@ -16,7 +16,6 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -74,27 +73,9 @@ class UserResource extends Resource
                                 ->required(),
                             Forms\Components\TextInput::make('number')
                                 ->label('Nomor Anggota')
-                                ->required()
-                                ->unique(ignoreRecord: true)
-                                ->disabled(true)
-                                ->default(function () {
-
-                                    $user = Auth::user();
-                                    $kodeKota = '001'; // Bontang
-                                    $kodeDistrict = str_pad($user->district_id, 2, '0', STR_PAD_LEFT);
-                                    $kodeSubDistrict = str_pad($user->sub_district_id, 2, '0', STR_PAD_LEFT);
-                                    // ambil tahun berjalan
-                                    $tahun = date('Y');
-
-                                    // generate angka random 4 digit
-                                    do {
-                                        $randomNumber = str_pad(rand(0, 9999), 4, '0', STR_PAD_LEFT);
-                                        $number = $kodeKota.$kodeDistrict.$kodeSubDistrict.$tahun.$randomNumber;
-                                    } while (User::query()->where('number', $number)->exists());
-
-                                    return $number;
-                                })
-                                ->dehydrated(), // pastikan tetap dikirim ke database
+                                ->disabled()
+                                ->default('Dibuat otomatis')
+                                ->dehydrated(false),
                         ]),
 
                     Forms\Components\Grid::make(2)

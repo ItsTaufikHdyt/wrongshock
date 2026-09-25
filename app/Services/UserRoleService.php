@@ -24,6 +24,10 @@ class UserRoleService
                 $this->fail('waste_bank_id', 'Bank Sampah wajib dipilih untuk Admin Bank Sampah.');
             }
 
+            if ($role === 'user') {
+                return app(CitizenIdentityService::class)->createCitizen($attributes);
+            }
+
             $user = User::query()->create($attributes);
             $user->syncRoles([Role::findOrCreate($role, 'web')]);
 
@@ -62,6 +66,10 @@ class UserRoleService
                 $target->wasteBanksAsStaff()->detach();
             }
 
+            if ($role === 'user') {
+                app(CitizenIdentityService::class)->ensureQrToken($target->refresh());
+            }
+
             return $target->refresh();
         });
     }
@@ -75,7 +83,7 @@ class UserRoleService
             $this->validateRole($role);
             $this->protectLastSuperAdmin($target, $role, $attributes['status'] ?? null);
 
-            $target->fill(array_diff_key($attributes, array_flip(['role', 'waste_bank_id', 'password_confirmation'])));
+            $target->fill(array_diff_key($attributes, array_flip(['role', 'number', 'waste_bank_id', 'password_confirmation'])));
             $target->save();
 
             if ($role !== $target->getRoleNames()->first()) {
@@ -93,6 +101,10 @@ class UserRoleService
                 $target->wasteBanksAsStaff()->detach();
             } else {
                 $target->wasteBanksAsStaff()->detach();
+            }
+
+            if ($role === 'user') {
+                app(CitizenIdentityService::class)->ensureQrToken($target->refresh());
             }
 
             return $target->refresh();

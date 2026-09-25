@@ -56,20 +56,7 @@ class RegisterController extends Controller
                 ->withInput($request->except(['password', 'password_confirmation']));
         }
 
-        $kodeKota = '001'; // Bontang
-        $kodeDistrict = str_pad($request->district, 2, '0', STR_PAD_LEFT);
-        $kodeSubDistrict = str_pad($request->sub_district, 2, '0', STR_PAD_LEFT);
-        // ambil tahun berjalan
-        $tahun = date('Y');
-
-        // generate angka random 4 digit
-        $randomNumber = str_pad(rand(0, 9999), 4, '0', STR_PAD_LEFT);
-
-        // gabungkan jadi format ID
-        $number = $kodeKota.$kodeDistrict.$kodeSubDistrict.$tahun.$randomNumber;
-
         app(BankMembershipService::class)->registerCitizen([
-            'number' => $number,
             'name' => $request->name,
             'email' => $request->email,
             'address' => $request->address,

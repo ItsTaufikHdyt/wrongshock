@@ -52,6 +52,7 @@ class DemoUsersAndMemberCreationTest extends TestCase
     public function test_demo_panel_access_and_bank_admin_can_open_member_creation(): void
     {
         $this->seed(\Database\Seeders\DatabaseSeeder::class);
+        $this->seed(\Database\Seeders\DemoUserSeeder::class);
         $admin = User::whereEmail('admin@wrongshock.test')->firstOrFail();
         $citizen = User::whereEmail('user@wrongshock.test')->firstOrFail();
         $super = User::whereEmail('superadmin@wrongshock.test')->firstOrFail();
@@ -72,6 +73,7 @@ class DemoUsersAndMemberCreationTest extends TestCase
     public function test_bank_admin_create_makes_global_zero_balance_citizen(): void
     {
         $this->seed(\Database\Seeders\DatabaseSeeder::class);
+        $this->seed(\Database\Seeders\DemoUserSeeder::class);
         $admin = User::whereEmail('admin@wrongshock.test')->firstOrFail();
         $this->actingAs($admin);
         Filament::setCurrentPanel(Filament::getPanel('adminPanel'));
@@ -100,6 +102,7 @@ class DemoUsersAndMemberCreationTest extends TestCase
     public function test_member_create_rejects_invalid_location_and_duplicate_identifiers(): void
     {
         $this->seed(\Database\Seeders\DatabaseSeeder::class);
+        $this->seed(\Database\Seeders\DemoUserSeeder::class);
         $admin = User::whereEmail('admin@wrongshock.test')->firstOrFail();
         $this->assertTrue($admin->can('create', User::class));
     }

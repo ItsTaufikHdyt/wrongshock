@@ -2,7 +2,7 @@
 
 ## Overall
 
-**Current status: P2.1D Phase 3 VERIFIED / P2.2 NOT STARTED / P1.8 NOT STARTED / M8 COMPLETE**
+**Current status: P2.2A COMPLETE / P2.2B-C NOT STARTED / P1.8 NOT STARTED / M8 COMPLETE**
 
 This document tracks implementation against `prd.md`. It must be updated
 after every meaningful coding session.
@@ -22,9 +22,10 @@ decimal(12,3). - Domain coverage exists for deposit, cancellation, withdrawal,
  complete.
 
 Current verified development DB: 6 users including three guarded demo users,
-cached balance total 2,060,800, 6 ledger entries, ledger net 2,060,800, 3
-deposits, 7 deposit items, and 0 withdrawals. Reconciliation reports MATCH for
-all 6 users. P2.1A added one legacy bank (`BS001`), one legacy admin
+cached balance total 47,600, 3 ledger entries, ledger net 47,600, 3 deposits,
+7 deposit items, and 0 withdrawals. Reconciliation reports MATCH for all 6
+users. All 3 citizens have one global QR token; admins and the super admin do
+not require one. P2.1A added one legacy bank (`BS001`), one legacy admin
 assignment, and bank context to all existing deposits without changing
 financial values or ledger rows.
 
@@ -287,6 +288,32 @@ and aggregate synchronization.
 The host has no `php` executable, but all verification ran in the project
 Docker app container. No development financial data was changed by Phase 2
 code or tests.
+
+### P2.2A --- Member Identity and QR Foundation
+
+Status: COMPLETE / VERIFIED. Citizen creation now uses
+`CitizenIdentityService` for the existing human-readable `users.number`
+format, secure random suffixes, bounded retry on actual unique collisions,
+and explicit number immutability in normal platform workflows. Existing
+numbers were not changed.
+
+Added nullable unique `users.qr_token` storage for one opaque global citizen
+identity token. QR payloads use `WRG:M:<token>` and contain no user ID, number,
+bank, membership, balance, or other personal data. `ensureQrToken()` is
+idempotent; explicit rotation invalidates the old token without changing
+membership or financial history. Role transitions to `user` ensure a token;
+transitions away from `user` retain it.
+
+Added idempotent `members:backfill-qr` with `--dry-run`, Super Admin-only QR
+rotation in platform user management, and the authenticated citizen `Kartu
+Anggota` page with server-rendered SVG QR. Existing-user membership additions
+reuse the same token and never create bank-specific tokens. No QR resolver,
+deposit integration, camera, or scanner was added; those remain P2.2B/P2.2C.
+
+The development migration and backfill generated 3 tokens for 3 citizens with
+0 failures. Financial totals remained 47,600 / 47,600 / 47,600 and all
+reconciliation reports remained MATCH. Full Docker verification passes with
+216 tests, 1,052 assertions, 0 failures, and 0 skipped tests.
 
 ### P2.1D Phase 3 --- Financial Hardening and Concurrency Readiness
 

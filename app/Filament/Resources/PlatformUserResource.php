@@ -7,11 +7,14 @@ use App\Models\District;
 use App\Models\SubDistrict;
 use App\Models\User;
 use App\Models\WasteBank;
+use App\Services\CitizenIdentityService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
 class PlatformUserResource extends Resource
@@ -44,7 +47,9 @@ class PlatformUserResource extends Resource
             Forms\Components\TextInput::make('name')->label('Nama')->required(),
             Forms\Components\TextInput::make('number')
                 ->label('Nomor')
-                ->required()
+                ->required(fn (Forms\Get $get): bool => $get('role') !== 'user')
+                ->disabled(fn (Forms\Get $get, $livewire): bool => $get('role') === 'user' && $livewire instanceof Pages\CreatePlatformUser)
+                ->dehydrated(fn (Forms\Get $get): bool => $get('role') !== 'user')
                 ->unique('users', 'number', ignoreRecord: true),
             Forms\Components\TextInput::make('email')
                 ->label('Email')
@@ -115,6 +120,19 @@ class PlatformUserResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make()->label('Edit'),
+                Tables\Actions\Action::make('rotateQr')
+                    ->label('Regenerate QR')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalHeading('Regenerate QR anggota?')
+                    ->modalDescription('QR lama tidak akan dapat digunakan lagi.')
+                    ->visible(fn (User $record): bool => auth()->user()?->isPlatformAdmin() === true && $record->hasRole('user'))
+                    ->action(function (User $record): void {
+                        Gate::authorize('update', $record);
+                        app(CitizenIdentityService::class)->rotateQrToken($record);
+                        Notification::make()->success()->title('QR anggota berhasil diperbarui.')->send();
+                    }),
             ])
             ->bulkActions([])
             ->searchPlaceholder('Cari pengguna...');

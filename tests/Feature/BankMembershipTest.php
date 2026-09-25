@@ -152,7 +152,7 @@ class BankMembershipTest extends TestCase
         $this->assertDatabaseHas('waste_bank_members', ['id' => $membership->id, 'status' => 'active']);
     }
 
-    public function test_editing_member_with_another_users_number_is_rejected(): void
+    public function test_editing_member_cannot_change_member_number(): void
     {
         $super = $this->makeUser('super_admin');
         $citizen = $this->makeUser('user');
@@ -163,7 +163,9 @@ class BankMembershipTest extends TestCase
         Livewire::test(EditUser::class, ['record' => $citizen->getRouteKey()])
             ->set('data.number', $other->number)
             ->call('save')
-            ->assertHasFormErrors(['number' => 'unique']);
+            ->assertHasNoFormErrors(['number']);
+
+        $this->assertNotSame($other->number, $citizen->refresh()->number);
     }
 
     public function test_member_workflow_does_not_expose_global_user_delete(): void

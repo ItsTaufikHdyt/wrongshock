@@ -8,7 +8,6 @@ use App\Models\WasteBankMember;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Validation\ValidationException;
-use Spatie\Permission\Models\Role;
 
 class BankMembershipService
 {
@@ -35,6 +34,8 @@ class BankMembershipService
         }
 
         return $this->database->transaction(function () use ($bank, $user): WasteBankMember {
+            app(CitizenIdentityService::class)->ensureQrToken($user);
+
             return WasteBankMember::query()->firstOrCreate(
                 ['waste_bank_id' => $bank->id, 'user_id' => $user->id],
                 ['joined_at' => now(), 'status' => 'active'],
@@ -74,28 +75,23 @@ class BankMembershipService
             ? WasteBank::query()->find($attributes['waste_bank_id'])
             : null);
 
-        return $this->database->transaction(function () use ($bank, $attributes): User {
-            $user = User::query()->create([
-                'name' => $attributes['name'],
-                'number' => $attributes['number'],
-                'email' => $attributes['email'],
-                'password' => $attributes['password'],
-                'district_id' => $attributes['district_id'],
-                'sub_district_id' => $attributes['sub_district_id'],
-                'address' => $attributes['address'],
-                'image' => $attributes['image'] ?? null,
-                'status' => 1,
-            ]);
-
-            $user->assignRole(Role::findOrCreate('user', 'web'));
+        return app(CitizenIdentityService::class)->createCitizen([
+            'name' => $attributes['name'],
+            'email' => $attributes['email'],
+            'password' => $attributes['password'],
+            'district_id' => $attributes['district_id'],
+            'sub_district_id' => $attributes['sub_district_id'],
+            'address' => $attributes['address'],
+            'image' => $attributes['image'] ?? null,
+            'status' => 1,
+            'balance' => 0,
+        ], function (User $user) use ($bank): void {
             WasteBankMember::query()->create([
                 'waste_bank_id' => $bank->id,
                 'user_id' => $user->id,
                 'joined_at' => now(),
                 'status' => 'active',
             ]);
-
-            return $user->refresh();
         });
     }
 
@@ -111,28 +107,22 @@ class BankMembershipService
             ]);
         }
 
-        return $this->database->transaction(function () use ($bank, $attributes): User {
-            $user = User::query()->create([
-                'number' => $attributes['number'],
-                'name' => $attributes['name'],
-                'email' => $attributes['email'],
-                'address' => $attributes['address'],
-                'district_id' => $attributes['district_id'],
-                'sub_district_id' => $attributes['sub_district_id'],
-                'password' => $attributes['password'],
-                'status' => 0,
-                'balance' => 0,
-            ]);
-
-            $user->assignRole(Role::findOrCreate('user', 'web'));
+        return app(CitizenIdentityService::class)->createCitizen([
+            'name' => $attributes['name'],
+            'email' => $attributes['email'],
+            'address' => $attributes['address'],
+            'district_id' => $attributes['district_id'],
+            'sub_district_id' => $attributes['sub_district_id'],
+            'password' => $attributes['password'],
+            'status' => 0,
+            'balance' => 0,
+        ], function (User $user) use ($bank): void {
             WasteBankMember::query()->create([
                 'waste_bank_id' => $bank->id,
                 'user_id' => $user->id,
                 'joined_at' => now(),
                 'status' => 'active',
             ]);
-
-            return $user->refresh();
         });
     }
 

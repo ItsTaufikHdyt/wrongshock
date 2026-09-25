@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\UserPanel\Pages\Auth\Login as CustomLogin;
 use App\Filament\UserPanel\Pages\Auth\Profile;
+use App\Filament\UserPanel\Pages\MemberCard;
 use App\Filament\UserPanel\Pages\Memberships;
 use App\Filament\UserPanel\Pages\UserDashboard;
 use App\Http\Middleware\EnsureActiveUser;
@@ -74,6 +75,12 @@ class UserPanelPanelProvider extends PanelProvider
                     ->isActiveWhen(fn (): bool => request()->routeIs(Memberships::getRouteName('userPanel')))
                     ->sort(2)
                     ->url(fn (): string => Memberships::getUrl(panel: 'userPanel')),
+                NavigationItem::make('Kartu Anggota')
+                    ->icon('heroicon-o-qr-code')
+                    ->activeIcon('heroicon-s-qr-code')
+                    ->isActiveWhen(fn (): bool => request()->routeIs(MemberCard::getRouteName('userPanel')))
+                    ->sort(3)
+                    ->url(fn (): string => MemberCard::getUrl(panel: 'userPanel')),
             ])
             ->authenticatedRoutes(function (): void {
                 Route::get('users', fn () => redirect(Profile::getUrl(panel: 'userPanel')))

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\LedgerEntry;
 use App\Models\User;
+use App\Models\WasteBankMember;
 use App\Models\WasteDeposit;
 use App\Models\WasteItem;
 use App\Models\Withdrawal;
@@ -21,6 +22,8 @@ class BalanceReconciliationTest extends TestCase
     use RefreshDatabase;
 
     private BalanceReconciliationService $service;
+
+    private User $operator;
 
     protected function setUp(): void
     {
@@ -211,8 +214,8 @@ class BalanceReconciliationTest extends TestCase
 
     public function test_core_services_preserve_reconciled_financial_invariant(): void
     {
-        $user = $this->createUser(100000);
-        Auth::login($user);
+        $user = $this->createUser(100000, true);
+        Auth::login($this->operator);
         $item = WasteItem::query()->create([
             'category' => 'Plastic',
             'output' => 'Kriya',
@@ -223,11 +226,11 @@ class BalanceReconciliationTest extends TestCase
         $this->service->createOpeningBalances();
         $first = app(DepositService::class)->post($user->id, '2026-09-21', [
             ['waste_item_id' => $item->id, 'quantity' => '1.000'],
-        ]);
-        app(DepositService::class)->cancel($first, 'Correction');
+        ], $this->operator->id);
+        app(DepositService::class)->cancel($first, 'Correction', $this->operator->id);
         app(DepositService::class)->post($user->id, '2026-09-21', [
             ['waste_item_id' => $item->id, 'quantity' => '1.600'],
-        ]);
+        ], $this->operator->id);
         $withdrawal = app(WithdrawalService::class)->request($user->id, 20000);
         app(WithdrawalService::class)->approve($withdrawal);
 
@@ -242,8 +245,8 @@ class BalanceReconciliationTest extends TestCase
 
     public function test_full_financial_lifecycle_reconciles_after_every_operation(): void
     {
-        $user = $this->createUser(100000);
-        Auth::login($user);
+        $user = $this->createUser(100000, true);
+        Auth::login($this->operator);
         $item = WasteItem::query()->create([
             'category' => 'Plastic',
             'output' => 'Kriya',
@@ -256,11 +259,11 @@ class BalanceReconciliationTest extends TestCase
 
         $depositA = app(DepositService::class)->post($user->id, today()->toDateString(), [
             ['waste_item_id' => $item->id, 'quantity' => '2.500'],
-        ], $user->id);
+        ], $this->operator->id);
         $this->assertSame(25000, $depositA->total_amount);
         $this->assertReconciled($user, 125000);
 
-        $cancelled = app(DepositService::class)->cancel($depositA, 'Lifecycle correction', $user->id);
+        $cancelled = app(DepositService::class)->cancel($depositA, 'Lifecycle correction', $this->operator->id);
         $this->assertSame('cancelled', $cancelled->status);
         $this->assertSame(1, $cancelled->items()->count());
         $this->assertReconciled($user, 100000);
@@ -268,15 +271,15 @@ class BalanceReconciliationTest extends TestCase
         $item->update(['price' => 8000]);
         $depositB = app(DepositService::class)->post($user->id, today()->toDateString(), [
             ['waste_item_id' => $item->id, 'quantity' => '5.000'],
-        ], $user->id);
+        ], $this->operator->id);
         $this->assertSame(40000, $depositB->total_amount);
         $this->assertReconciled($user, 140000);
 
-        $withdrawal = app(WithdrawalService::class)->request($user->id, 30000, $user->id);
+        $withdrawal = app(WithdrawalService::class)->request($user->id, 30000, $this->operator->id);
         $this->assertSame('pending', $withdrawal->status);
         $this->assertReconciled($user, 140000);
 
-        $approved = app(WithdrawalService::class)->approve($withdrawal, $user->id);
+        $approved = app(WithdrawalService::class)->approve($withdrawal, $this->operator->id);
         $this->assertSame('approved', $approved->status);
         $this->assertReconciled($user, 110000);
 
@@ -290,12 +293,12 @@ class BalanceReconciliationTest extends TestCase
 
     public function test_rejected_withdrawal_preserves_balance_and_reconciliation(): void
     {
-        $user = $this->createUser(100000);
-        Auth::login($user);
+        $user = $this->createUser(100000, true);
+        Auth::login($this->operator);
         $this->service->createOpeningBalances();
 
-        $withdrawal = app(WithdrawalService::class)->request($user->id, 40000, $user->id);
-        $rejected = app(WithdrawalService::class)->reject($withdrawal, 'Incomplete account details', $user->id);
+        $withdrawal = app(WithdrawalService::class)->request($user->id, 40000, $this->operator->id);
+        $rejected = app(WithdrawalService::class)->reject($withdrawal, 'Incomplete account details', $this->operator->id);
 
         $this->assertSame('rejected', $rejected->status);
         $this->assertSame(100000, $user->refresh()->balance);
@@ -303,7 +306,7 @@ class BalanceReconciliationTest extends TestCase
         $this->assertSame(0, LedgerEntry::query()->where('type', 'withdrawal_debit')->count());
     }
 
-    private function createUser(int $balance): User
+    private function createUser(int $balance, bool $withOperator = false): User
     {
         $districtId = DB::table('districts')->insertGetId([
             'name' => 'Reconciliation District '.uniqid(),
@@ -328,8 +331,28 @@ class BalanceReconciliationTest extends TestCase
         ]);
 
         $user->forceFill(['balance' => $balance])->save();
-        $user->assignRole(Role::findOrCreate('admin', 'web'));
-        $this->assignDefaultWasteBank($user);
+        $user->assignRole(Role::findOrCreate('user', 'web'));
+        if (! $withOperator) {
+            return $user;
+        }
+
+        $this->operator = User::query()->create([
+            'name' => 'Reconciliation Operator',
+            'number' => 'ADMIN-'.uniqid(),
+            'email' => uniqid().'@operator.example.test',
+            'password' => 'password',
+            'district_id' => $districtId,
+            'sub_district_id' => $subDistrictId,
+            'status' => 1,
+        ]);
+        $this->operator->assignRole(Role::findOrCreate('admin', 'web'));
+        $bank = $this->assignDefaultWasteBank($this->operator);
+        WasteBankMember::create([
+            'waste_bank_id' => $bank->id,
+            'user_id' => $user->id,
+            'joined_at' => now(),
+            'status' => 'active',
+        ]);
 
         return $user;
     }

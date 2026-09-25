@@ -1,31 +1,60 @@
 <x-filament::page>
-    <div class="space-y-6">
-        <div>
-            <p class="text-sm font-semibold uppercase tracking-wide text-primary-600">Keanggotaan Saya</p>
-            <h1 class="text-2xl font-bold text-gray-950 dark:text-white">Keanggotaan Bank Sampah</h1>
-            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Daftar bank sampah tempat Anda terdaftar.</p>
-        </div>
+    <div class="ws-membership-page">
+        <header class="ws-membership-header">
+            <div class="ws-membership-header-icon" aria-hidden="true">
+                <x-heroicon-o-building-storefront />
+            </div>
+            <div>
+                <p class="ws-membership-eyebrow">Keanggotaan Saya</p>
+                <h1>Keanggotaan Bank Sampah</h1>
+                <p>Daftar Bank Sampah tempat Anda terdaftar sebagai anggota.</p>
+            </div>
+        </header>
 
-        <div class="grid gap-4 md:grid-cols-2">
+        <div class="ws-membership-grid">
             @forelse ($this->memberships() as $membership)
-                <article class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
-                    <div class="flex items-start justify-between gap-4">
-                        <div>
-                            <h2 class="font-semibold text-gray-950 dark:text-white">{{ $membership->wasteBank->name }}</h2>
-                            <p class="text-sm text-gray-500">{{ $membership->wasteBank->code }}</p>
+                @php($isActive = $membership->status === 'active')
+                <article class="ws-membership-card">
+                    <div class="ws-membership-card-head">
+                        <div class="ws-membership-bank-mark" aria-hidden="true">
+                            <x-heroicon-o-arrow-path />
                         </div>
-                        <span class="rounded-full px-3 py-1 text-xs font-semibold {{ $membership->status === 'active' ? 'bg-success-100 text-success-700' : 'bg-gray-100 text-gray-600' }}">
-                            {{ $membership->status === 'active' ? 'Aktif' : 'Nonaktif' }}
-                        </span>
+                        <div class="ws-membership-bank-copy">
+                            <h2>{{ $membership->wasteBank->name }}</h2>
+                            <p>{{ $membership->wasteBank->code }}</p>
+                        </div>
                     </div>
-                    <dl class="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                        <div><dt class="inline font-medium">Alamat:</dt> <dd class="inline">{{ $membership->wasteBank->address ?: '-' }}</dd></div>
-                        <div><dt class="inline font-medium">Bergabung:</dt> <dd class="inline">{{ $membership->joined_at?->translatedFormat('d F Y') ?: '-' }}</dd></div>
+                    <dl class="ws-membership-meta">
+                        @if ($membership->wasteBank->district || $membership->wasteBank->subDistrict)
+                            <div>
+                                <dt>Wilayah</dt>
+                                <dd>{{ $membership->wasteBank->district?->name ?: '-' }}{{ $membership->wasteBank->subDistrict ? ' • '.$membership->wasteBank->subDistrict->name : '' }}</dd>
+                            </div>
+                        @endif
+                        <div>
+                            <dt>Status Keanggotaan</dt>
+                            <dd class="ws-membership-status {{ $isActive ? 'is-active' : 'is-inactive' }}">
+                                @if ($isActive)
+                                    <x-heroicon-o-check-circle aria-hidden="true" />
+                                @else
+                                    <x-heroicon-o-minus-circle aria-hidden="true" />
+                                @endif
+                                <span>{{ $isActive ? 'Aktif' : 'Nonaktif' }}</span>
+                            </dd>
+                        </div>
+                        <div>
+                            <dt>Bergabung</dt>
+                            <dd>{{ $membership->joined_at?->translatedFormat('d F Y') ?: '-' }}</dd>
+                        </div>
                     </dl>
                 </article>
             @empty
-                <div class="rounded-2xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-600 dark:border-gray-700 dark:text-gray-400 md:col-span-2">
-                    Anda belum terdaftar sebagai anggota Bank Sampah.
+                <div class="ws-membership-empty">
+                    <div class="ws-membership-empty-icon" aria-hidden="true">
+                        <x-heroicon-o-building-storefront />
+                    </div>
+                    <h2>Belum Ada Keanggotaan</h2>
+                    <p>Anda belum terdaftar sebagai anggota Bank Sampah.</p>
                 </div>
             @endforelse
         </div>

@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Http\Middleware\EnsureActiveUser;
 use App\Models\LedgerEntry;
 use App\Models\User;
+use App\Models\WasteBank;
+use App\Models\WasteBankMember;
 use App\Models\WasteDeposit;
 use App\Models\WasteItem;
 use App\Models\Withdrawal;
@@ -303,6 +305,17 @@ class AuthorizationTest extends TestCase
         $user->assignRole(Role::findOrCreate($role, 'web'));
         if ($role === 'admin') {
             $this->assignDefaultWasteBank($user);
+        } else {
+            $bank = WasteBank::query()->firstOrCreate(
+                ['code' => 'BS001'],
+                ['name' => 'Test Bank Sampah', 'status' => true]
+            );
+            WasteBankMember::create([
+                'waste_bank_id' => $bank->id,
+                'user_id' => $user->id,
+                'joined_at' => now(),
+                'status' => 'active',
+            ]);
         }
 
         return $user->refresh();

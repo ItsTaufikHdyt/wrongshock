@@ -29,6 +29,8 @@ class DepositServiceTest extends TestCase
 
     private User $user;
 
+    private User $admin;
+
     private WasteItem $wasteItem;
 
     protected function setUp(): void
@@ -57,9 +59,26 @@ class DepositServiceTest extends TestCase
             'status' => 1,
         ]);
         $this->user->forceFill(['balance' => 0])->save();
-        $this->user->assignRole(Role::findOrCreate('admin', 'web'));
-        $this->assignDefaultWasteBank($this->user);
-        Auth::login($this->user);
+        $this->user->assignRole(Role::findOrCreate('user', 'web'));
+
+        $this->admin = User::create([
+            'name' => 'Test Admin',
+            'number' => 'ADMIN-'.uniqid(),
+            'email' => uniqid().'@admin.example.test',
+            'password' => 'password',
+            'district_id' => $districtId,
+            'sub_district_id' => $subDistrictId,
+            'status' => 1,
+        ]);
+        $this->admin->assignRole(Role::findOrCreate('admin', 'web'));
+        $bank = $this->assignDefaultWasteBank($this->admin);
+        \App\Models\WasteBankMember::create([
+            'waste_bank_id' => $bank->id,
+            'user_id' => $this->user->id,
+            'joined_at' => now(),
+            'status' => 'active',
+        ]);
+        Auth::login($this->admin);
 
         $this->wasteItem = WasteItem::create([
             'category' => 'Plastic',
@@ -73,7 +92,7 @@ class DepositServiceTest extends TestCase
     {
         $deposit = app(DepositService::class)->post($this->user->id, '2026-09-21', [
             ['waste_item_id' => $this->wasteItem->id, 'quantity' => '1.250'],
-        ], $this->user->id);
+        ], $this->admin->id);
 
         $item = $deposit->items->sole();
 
@@ -283,7 +302,7 @@ class DepositServiceTest extends TestCase
             ['waste_item_id' => $this->wasteItem->id, 'quantity' => '2.000'],
         ]);
 
-        $cancelled = app(DepositService::class)->cancel($deposit, 'Duplicate weighing', $this->user->id);
+        $cancelled = app(DepositService::class)->cancel($deposit, 'Duplicate weighing', $this->admin->id);
 
         $this->assertSame('cancelled', $cancelled->status);
         $this->assertNotNull($cancelled->cancelled_at);
@@ -501,5 +520,23 @@ class DepositServiceTest extends TestCase
         $this->assertFalse(WasteDepositResource::canDelete($cancelled));
         $this->expectException(LogicException::class);
         $cancelled->delete();
+    }
+
+    public function test_deposit_requires_an_active_membership_in_the_current_bank(): void
+    {
+        $this->user->bankMemberships()->update(['status' => 'inactive']);
+
+        $this->expectException(ValidationException::class);
+        app(DepositService::class)->post($this->user->id, '2026-09-21', [
+            ['waste_item_id' => $this->wasteItem->id, 'quantity' => '1.000'],
+        ]);
+    }
+
+    public function test_deposit_rejects_admin_accounts_even_if_they_are_selected(): void
+    {
+        $this->expectException(ValidationException::class);
+        app(DepositService::class)->post($this->admin->id, '2026-09-21', [
+            ['waste_item_id' => $this->wasteItem->id, 'quantity' => '1.000'],
+        ]);
     }
 }

@@ -40,27 +40,6 @@ class AdminsRelationManager extends RelationManager
                     ->action(fn ($record): mixed => app(AdminMembershipService::class)->removeBankAdmin(auth()->user(), $record)),
             ])
             ->headerActions([
-                Tables\Actions\Action::make('assignAdmin')
-                    ->label('Tambah Admin')
-                    ->form([
-                        Forms\Components\Select::make('user_id')
-                            ->label('Admin Bank Sampah')
-                            ->options(fn (): array => User::query()
-                                ->where('status', 1)
-                                ->whereHas('roles', fn ($query) => $query->where('name', 'admin'))
-                                ->whereDoesntHave('wasteBanksAsStaff', fn ($query) => $query->where('waste_banks.status', true))
-                                ->orderBy('name')
-                                ->get()
-                                ->mapWithKeys(fn (User $user): array => [$user->id => "{$user->name} | {$user->email}"])
-                                ->all())
-                            ->required()
-                            ->searchable(),
-                    ])
-                    ->authorize(fn (): bool => auth()->user()?->isPlatformAdmin() ?? false)
-                    ->action(function (array $data): void {
-                        $admin = User::query()->findOrFail($data['user_id']);
-                        app(AdminMembershipService::class)->assignBankAdmin(auth()->user(), $admin, $this->getOwnerRecord());
-                    }),
                 Tables\Actions\Action::make('createAdmin')
                     ->label('Tambah Admin Baru')
                     ->form([

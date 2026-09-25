@@ -56,14 +56,23 @@ class WasteDepositResource extends Resource
                         Forms\Components\Select::make('user_id')
                             ->searchable()
                             ->label('Anggota')
-                            ->relationship('user', 'name', fn ($query) => $query->whereHas('roles', fn ($roleQuery) => $roleQuery->where('name', 'user')))
+                            ->relationship('user', 'name', fn ($query) => $query
+                                ->where('status', 1)
+                                ->whereHas('roles', fn ($roleQuery) => $roleQuery->where('name', 'user'))
+                                ->whereHas('bankMemberships', fn ($membershipQuery) => $membershipQuery
+                                    ->where('waste_bank_id', app(WasteBankContext::class)->current()->id)
+                                    ->where('status', 'active')))
                             ->getSearchResultsUsing(function ($search) {
                                 return User::query()
                                     ->where(function ($query) use ($search) {
                                         $query->where('name', 'like', "%{$search}%")
                                             ->orWhere('number', 'like', "%{$search}%");
                                     })
+                                    ->where('status', 1)
                                     ->whereHas('roles', fn ($query) => $query->where('name', 'user'))
+                                    ->whereHas('bankMemberships', fn ($query) => $query
+                                        ->where('waste_bank_id', app(WasteBankContext::class)->current()->id)
+                                        ->where('status', 'active'))
                                     ->limit(50)
                                     ->get()
                                     ->mapWithKeys(fn ($user) => [$user->id => "{$user->name} | {$user->number}"]);

@@ -80,6 +80,201 @@
     box-shadow: none;
 }
 
+.ws-membership-page {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.ws-membership-header {
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+    padding: 1.2rem 1.35rem;
+    border: 1px solid #d9ebe3;
+    border-radius: 1rem;
+    background: linear-gradient(110deg, #eaf8f4, #f8fcfa);
+}
+
+.ws-membership-header-icon,
+.ws-membership-bank-mark,
+.ws-membership-empty-icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    border-radius: .8rem;
+    background: #ddf4e7;
+    color: #176b4a;
+}
+
+.ws-membership-header-icon {
+    width: 2.9rem;
+    height: 2.9rem;
+}
+
+.ws-membership-header-icon svg {
+    width: 1.45rem;
+    height: 1.45rem;
+}
+
+.ws-membership-eyebrow {
+    color: #21865f;
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.ws-membership-header h1 {
+    margin-top: .2rem;
+    color: #134e3a;
+    font-size: clamp(1.25rem, 2.5vw, 1.7rem);
+    font-weight: 800;
+    letter-spacing: -.025em;
+}
+
+.ws-membership-header p:last-child {
+    margin-top: .2rem;
+    color: #52645a;
+    font-size: .78rem;
+}
+
+.ws-membership-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.ws-membership-card {
+    min-width: 0;
+    padding: 1.15rem;
+    border: 1px solid #e2eae5;
+    border-radius: 1rem;
+    background: #fff;
+    box-shadow: 0 4px 18px rgba(23, 33, 27, .045);
+}
+
+.ws-membership-card-head {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    gap: .75rem;
+}
+
+.ws-membership-bank-mark {
+    width: 2.35rem;
+    height: 2.35rem;
+}
+
+.ws-membership-bank-mark svg {
+    width: 1.15rem;
+    height: 1.15rem;
+}
+
+.ws-membership-bank-copy {
+    min-width: 0;
+}
+
+.ws-membership-bank-copy h2 {
+    overflow-wrap: anywhere;
+    color: #17211b;
+    font-size: .95rem;
+    font-weight: 750;
+}
+
+.ws-membership-bank-copy p {
+    margin-top: .15rem;
+    color: #66756c;
+    font-size: .72rem;
+    font-weight: 700;
+}
+
+.ws-membership-meta {
+    display: grid;
+    gap: .75rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #edf2ee;
+}
+
+.ws-membership-meta dt {
+    color: #718178;
+    font-size: .68rem;
+    font-weight: 700;
+}
+
+.ws-membership-meta dd {
+    margin-top: .2rem;
+    overflow-wrap: anywhere;
+    color: #29382f;
+    font-size: .78rem;
+    font-weight: 650;
+}
+
+.ws-membership-status {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+}
+
+.ws-membership-status svg {
+    width: .95rem;
+    height: .95rem;
+}
+
+.ws-membership-status.is-active {
+    color: #176b4a;
+}
+
+.ws-membership-status.is-inactive {
+    color: #68776e;
+}
+
+.ws-membership-empty {
+    grid-column: 1 / -1;
+    padding: 2.5rem 1.5rem;
+    border: 1px dashed #bdd5c5;
+    border-radius: 1rem;
+    background: #fbfdfb;
+    text-align: center;
+}
+
+.ws-membership-empty-icon {
+    width: 3.1rem;
+    height: 3.1rem;
+    margin: 0 auto;
+}
+
+.ws-membership-empty-icon svg {
+    width: 1.45rem;
+    height: 1.45rem;
+}
+
+.ws-membership-empty h2 {
+    margin-top: .85rem;
+    color: #17211b;
+    font-size: .95rem;
+    font-weight: 750;
+}
+
+.ws-membership-empty p {
+    margin-top: .3rem;
+    color: #66756c;
+    font-size: .78rem;
+}
+
+@media (max-width: 767px) {
+    .ws-membership-header {
+        align-items: flex-start;
+        padding: 1rem;
+    }
+
+    .ws-membership-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .ws-brand {
     display: flex;
     align-items: center;

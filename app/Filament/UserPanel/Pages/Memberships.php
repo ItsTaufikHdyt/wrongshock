@@ -21,7 +21,7 @@ class Memberships extends Page
     public function memberships()
     {
         return WasteBankMember::query()
-            ->with('wasteBank')
+            ->with(['wasteBank.district', 'wasteBank.subDistrict'])
             ->where('user_id', Auth::id())
             ->orderByDesc('joined_at')
             ->get();

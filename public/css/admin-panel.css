@@ -13,6 +13,13 @@
 .fi-panel-adminPanel .fi-sidebar-item-icon { color: #6b7d72; }
 .fi-panel-adminPanel .fi-sidebar-item-label { font-size: .86rem; font-weight: 650; }
 .fi-panel-adminPanel .fi-topbar > nav { min-height: 5rem; border-bottom: 1px solid #e2ebe5; box-shadow: none; }
+.fi-panel-adminPanel .fi-topbar > nav { align-items: center; }
+.fi-panel-adminPanel .fi-topbar > nav > .ms-auto,
+.fi-panel-adminPanel .fi-topbar > nav > .ms-auto > * { display: flex; align-items: center; }
+.fi-panel-adminPanel .fi-topbar > nav > .ms-auto { min-height: 100%; gap: .75rem; }
+.fi-panel-adminPanel .fi-topbar > nav > .ws-admin-topbar-title,
+.fi-panel-adminPanel .fi-topbar > nav > .ws-admin-topbar-identity { align-self: center; }
+.fi-panel-adminPanel .fi-topbar > nav > .ws-admin-topbar-identity { margin-left: 0; }
 .fi-panel-adminPanel .fi-main { max-width: 1440px; padding: 1.5rem; }
 .fi-panel-adminPanel .fi-page { gap: 0; }
 .ws-admin-brand, .ws-admin-topbar-title, .ws-admin-topbar-identity { display: flex; align-items: center; }

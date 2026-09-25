@@ -44,6 +44,8 @@ class DepositService
                 throw (new ModelNotFoundException)->setModel(User::class, [$actorId]);
             }
 
+            $this->assertEligibleMember($user, $wasteBank->id);
+
             $itemIds = [];
             foreach ($items as $index => $item) {
                 if (! is_array($item) || ! array_key_exists('waste_item_id', $item)) {
@@ -272,6 +274,20 @@ class DepositService
     private function fail(string $field, string $message): never
     {
         throw ValidationException::withMessages([$field => $message]);
+    }
+
+    private function assertEligibleMember(User $user, int $wasteBankId): void
+    {
+        if ((int) $user->status !== 1 || ! $user->hasRole('user') || $user->hasAnyRole(['admin', 'super_admin'])) {
+            $this->fail('user_id', 'Setoran hanya dapat dicatat untuk akun anggota User yang aktif.');
+        }
+
+        if (! $user->bankMemberships()
+            ->where('waste_bank_id', $wasteBankId)
+            ->where('status', 'active')
+            ->exists()) {
+            $this->fail('user_id', 'Anggota tidak aktif atau tidak terdaftar di bank sampah ini.');
+        }
     }
 
     private function authorizeAdmin(?int $actorId): int

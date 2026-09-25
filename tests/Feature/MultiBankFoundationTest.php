@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Filament\Resources\WasteDepositResource;
 use App\Models\User;
 use App\Models\WasteBank;
+use App\Models\WasteBankMember;
 use App\Models\WasteDeposit;
 use App\Models\WasteItem;
 use App\Services\DepositService;
@@ -188,6 +189,15 @@ class MultiBankFoundationTest extends TestCase
         ]);
         $user->forceFill(['balance' => $balance])->save();
         $user->assignRole(Role::findOrCreate('user', 'web'));
+
+        foreach (WasteBank::query()->pluck('id') as $bankId) {
+            WasteBankMember::create([
+                'waste_bank_id' => $bankId,
+                'user_id' => $user->id,
+                'joined_at' => now(),
+                'status' => 'active',
+            ]);
+        }
 
         return $user;
     }

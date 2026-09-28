@@ -122,7 +122,7 @@ class UserSeeder extends Seeder
         $user = $this->createUser(
             'user@gmail.com',
             [
-                'name' => 'taufikhdyt',
+                'name' => 'Bambang',
                 'number' => '001010220254321',
                 'district_id' => $district->id,
                 'sub_district_id' => $userSubDistrict->id,
